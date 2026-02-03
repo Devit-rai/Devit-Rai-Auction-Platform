@@ -48,7 +48,7 @@ const login = async (req, res) => {
 
     const authToken = createJWT(user);
 
-    console.log(authToken);
+    res.cookie("authToken", authToken, { maxAge: 900000 * 1000 });
 
     res.status(200).json({
       message: "Login successful",
