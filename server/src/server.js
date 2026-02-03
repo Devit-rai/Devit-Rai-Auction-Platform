@@ -1,10 +1,13 @@
 import express from "express"
 import dotenv from "dotenv";
 import { connectDB }from './config/db.js';
+import authRoutes from "./routes/authRoutes.js";
 
 dotenv.config();
 const app = express();
 app.use(express.json());
+
+app.use("/api/auth", authRoutes);
 
 app.get("/", (_req, res) => {
   res.json({
@@ -14,7 +17,7 @@ app.get("/", (_req, res) => {
   });
 });
 
-const PORT = process.env.PORT || 5000;
+const PORT = process.env.PORT || 8000;
 
 const startServer = async () => {
   try {
