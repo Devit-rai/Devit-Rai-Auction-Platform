@@ -51,7 +51,7 @@ const login = async (req, res) => {
 
 const logout = async (req, res) => {
   try {
-    //CLEAR COOKIE (same name)
+    //CLEAR COOKIE
     res.clearCookie("authToken", {
       httpOnly: true,
       sameSite: "strict",
