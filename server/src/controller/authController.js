@@ -1,15 +1,12 @@
 import authService from "../services/authServices.js";
+import { createJWT } from "../utils/token.js";
 
 const signup = async (req, res) => {
-  const input = req.body;
-
   try {
-    if (!input.password) {
-      return res.status(400).json({ message: "Password is required" });
-    }
+    const input = req.body;
 
-    if (!input.confirmPassword) {
-      return res.status(400).json({ message: "Confirm Password is required" });
+    if (!input.password || !input.confirmPassword) {
+      return res.status(400).json({ message: "Password and Confirm Password are required" });
     }
 
     if (input.password !== input.confirmPassword) {
@@ -20,7 +17,7 @@ const signup = async (req, res) => {
 
     res.status(201).json({
       message: "User registered successfully",
-      user
+      user,
     });
   } catch (error) {
     res.status(500).json({ message: error.message });
@@ -28,32 +25,44 @@ const signup = async (req, res) => {
 };
 
 const login = async (req, res) => {
-  const input = req.body;
-
   try {
-    if (!input) {
-      return res.status(400).json({ message: "Required fields are required" });
-    }
-
-    if (!input.email) {
-      return res.status(400).json({ message: "Email is required" });
-    }
-
-    if (!input.password) {
-      return res.status(400).json({ message: "Password is required" });
-    }
+    const input = req.body;
 
     const user = await authService.login(input);
+    const authToken = createJWT(user);
+
+    // SET COOKIE
+    res.cookie("authToken", authToken, {
+      httpOnly: true,
+      sameSite: "strict",
+      maxAge: 24 * 60 * 60 * 1000, // 1 day
+    });
 
     res.status(200).json({
       message: "Login successful",
-      user
+      user,
     });
   } catch (error) {
-    res
-      .status(error.statusCode || 500)
-      .json({ message: error.message || "Server error" });
+    res.status(error.statusCode || 500).json({
+      message: error.message || "Server error",
+    });
   }
 };
 
-export default { signup, login,};
+const logout = async (req, res) => {
+  try {
+    //CLEAR COOKIE
+    res.clearCookie("authToken", {
+      httpOnly: true,
+      sameSite: "strict",
+    });
+
+    res.status(200).json({
+      message: "Logout successful",
+    });
+  } catch (error) {
+    res.status(500).json({ message: "Logout failed" });
+  }
+};
+
+export default { signup, login, logout };

@@ -13,8 +13,6 @@ const signup = async (data) => {
     email: data.email,
     password: hashedPassword,
     phone: data.phone,
-    roles: data.roles && data.roles.length > 0 ? data.roles : [USER]
-
   });
 
   return {
