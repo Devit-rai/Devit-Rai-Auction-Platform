@@ -14,4 +14,3 @@ async function verifyJWT(authToken) {
   });
 }
 export { createJWT, verifyJWT };
-//eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJfaWQiOiI2OTgyMjFiZDZhYzEzNmVjODAyNzlkNjUiLCJuYW1lIjoiVGVzdDEiLCJlbWFpbCI6InRlc3QxQGdtYWlsLmNvbSIsInJvbGVzIjpbIlVTRVIiXSwiaWF0IjoxNzcwMTM2MDA4LCJleHAiOjE3NzAyMjI0MDh9.s1gcfzSEum4x8Lq_0MpECzpzfC5M7cTg9yrr-aHFB-M

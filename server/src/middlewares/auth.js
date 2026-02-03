@@ -1,23 +1,20 @@
 import { verifyJWT } from "../utils/tokens.js";
 
 const auth = async (req, res, next) => {
-    const cookie = req.headers.cookie;
+  try {
+    const authToken = req.cookies.authToken;
 
-    if (!cookie) {
-        return res.status(401).json({ message: "Unauthorized" });
+    if (!authToken) {
+      return res.status(401).json({ message: "Unauthorized" });
     }
 
-    const authToken = cookie.split("=")[1];
+    const data = await verifyJWT(authToken);
+    req.user = data;
 
-    try {
-        const data = await verifyJWT(authToken);
-
-        req.user = data;
-
-        next();
-    } catch (error) {
-        res.status(401).json({ message: "Invalid token" });
-    }
+    next();
+  } catch (error) {
+    res.status(401).json({ message: "Invalid token" });
+  }
 };
 
 export default auth;
