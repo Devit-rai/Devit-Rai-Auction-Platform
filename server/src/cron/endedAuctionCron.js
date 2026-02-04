@@ -3,17 +3,22 @@ import { Auction } from "../models/Auction.js";
 import { Bid } from "../models/Bid.js";
 import User from "../models/User.js";
 
+/* 🔥 Cron to process ended auctions */
 export const endedAuctionCron = () => {
   cron.schedule("*/1 * * * *", async () => {
     try {
       const now = new Date();
-      console.log("Cron for ended auction running...");
 
-      // Only process auctions that have ended and not yet processed
+      // Find auctions that have ended and not yet processed
       const endedAuctions = await Auction.find({
         endTime: { $lt: now },
         isProcessed: false,
       });
+
+      // Only log if there are ended auctions
+      if (endedAuctions.length > 0) {
+        console.log(`Processing ${endedAuctions.length} ended auction(s)...`);
+      }
 
       for (const auction of endedAuctions) {
         try {
@@ -29,7 +34,7 @@ export const endedAuctionCron = () => {
             // Update auction with highest bidder
             auction.highestBidder = bidder._id;
 
-            // Optionally update bidder stats
+            // Update bidder stats
             await User.findByIdAndUpdate(
               bidder._id,
               {
@@ -49,11 +54,11 @@ export const endedAuctionCron = () => {
           console.log(`Auction ${auction._id} processed successfully`);
 
         } catch (error) {
-          console.error("Auction processing error:", error);
+          console.error("Error processing auction:", error);
         }
       }
     } catch (error) {
-      console.error("Cron error:", error);
+      console.error("Error in cron:", error);
     }
   });
 };
