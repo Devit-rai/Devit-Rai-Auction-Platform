@@ -10,6 +10,8 @@ const config = {
   version: process.env.VERSION || "1.0.0",
   jwtSecret: process.env.JWT_SECRET || "",
   
+  smtp_mail: process.env.SMTP_MAIL || "",
+  smtp_password: process.env.SMTP_PASSWORD || "",
 }
 
 export default config;
