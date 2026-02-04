@@ -13,4 +13,10 @@ router.post("/login", authController.login);
 // URL: /api/auth/logout
 router.post("/logout", auth, authController.logout);
 
+// URL: /api/auth/verify-email
+router.post("/verify-email", authController.verifyEmail);
+
+// URL: /api/auth/resend-otp
+router.post("/resend-otp", authController.resendOtp);
+
 export default router;

@@ -32,6 +32,12 @@ const userSchema = new mongoose.Schema({
   profileImageUrl: {
     type: String,
   },
+  isVerified: {
+    type: Boolean,
+    default: false,
+  },
+  verificationCode: { type: String },
+  verificationCodeExpiryTime: { type: Number },
   createdAt: {
     type: Date,
     default: Date.now,
