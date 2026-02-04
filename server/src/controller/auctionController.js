@@ -212,7 +212,6 @@ const republishItem = async (req, res) => {
   }
 };
 
-/* ✅ NAMED EXPORTS */
 export {
   addNewAuctionItem,
   getAllItems,
