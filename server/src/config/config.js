@@ -14,6 +14,9 @@ const config = {
     apiKey: process.env.CLOUDINARY_API_KEY || "",
     apiSecret: process.env.CLOUDINARY_API_SECRET || "",
   },
+  
+  smtp_mail: process.env.SMTP_MAIL || "",
+  smtp_password: process.env.SMTP_PASSWORD || "",
 }
 
 export default config;

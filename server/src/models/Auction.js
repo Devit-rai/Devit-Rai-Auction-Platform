@@ -29,10 +29,18 @@ const auctionSchema = new mongoose.Schema({
       amount: Number,
     },
   ],
-
-  highestBidder: { type: mongoose.Schema.Types.ObjectId, ref: "User" },
-
-  createdAt: { type: Date, default: Date.now },
+  highestBidder: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: "User",
+  },
+  isProcessed: {
+    type: Boolean,
+    default: false,
+  }, 
+  createdAt: {
+    type: Date,
+    default: Date.now,
+  },
 });
 
 export const Auction = mongoose.model("Auction", auctionSchema);
