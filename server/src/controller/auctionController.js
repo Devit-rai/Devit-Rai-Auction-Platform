@@ -2,7 +2,7 @@ import mongoose from "mongoose";
 import { Auction } from "../models/Auction.js";
 import { v2 as cloudinary } from "cloudinary";
 
-/* ADD NEW AUCTION ITEM */
+/* Add new auctions */
 const addNewAuctionItem = async (req, res) => {
   try {
     if (!req.files || !req.files.image) {
@@ -38,23 +38,14 @@ const addNewAuctionItem = async (req, res) => {
       return res.status(400).json({ message: "All fields are required" });
     }
 
-    if (new Date(startTime) < Date.now()) {
-      return res
-        .status(400)
-        .json({ message: "Start time must be in the future" });
-    }
+    const now = new Date();
+    const start = new Date(startTime);
+    const end = new Date(endTime);
 
-    if (new Date(startTime) >= new Date(endTime)) {
-      return res
-        .status(400)
-        .json({ message: "Start time must be less than end time" });
-    }
+    if (start < now) return res.status(400).json({ message: "Start time cannot be in the past" });
+    if (start >= end) return res.status(400).json({ message: "Start time must be less than end time" });
 
-
-    const uploadResult = await cloudinary.uploader.upload(
-      image.tempFilePath,
-      { folder: "AUCTION_ITEMS" }
-    );
+    const uploadResult = await cloudinary.uploader.upload(image.tempFilePath, { folder: "AUCTION_ITEMS" });
 
     const auctionItem = await Auction.create({
       title,
@@ -62,25 +53,22 @@ const addNewAuctionItem = async (req, res) => {
       category,
       condition,
       startingBid,
-      startTime,
-      endTime,
-      image: {
-        public_id: uploadResult.public_id,
-        url: uploadResult.secure_url,
-      },
+      currentBid: 0,
+      startTime: start,
+      endTime: end,
+      status: start > now ? "Upcoming" : "Live",
+      image: { public_id: uploadResult.public_id, url: uploadResult.secure_url },
       createdBy: req.user._id,
+      isProcessed: false,
     });
 
-    res.status(201).json({
-      message: "Auction item created successfully",
-      auctionItem,
-    });
+    res.status(201).json({ message: "Auction item created successfully", auctionItem });
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
 };
 
-/* GET ALL AUCTION ITEMS */
+/* Get all auctions */
 const getAllItems = async (req, res) => {
   try {
     const items = await Auction.find();
@@ -90,33 +78,24 @@ const getAllItems = async (req, res) => {
   }
 };
 
-/* GET AUCTION DETAILS */
+/* Get auction details */
 const getAuctionDetails = async (req, res) => {
   try {
     const { id } = req.params;
-
-    if (!mongoose.Types.ObjectId.isValid(id)) {
-      return res.status(400).json({ message: "Invalid auction ID" });
-    }
+    if (!mongoose.Types.ObjectId.isValid(id)) return res.status(400).json({ message: "Invalid auction ID" });
 
     const auctionItem = await Auction.findById(id);
-
-    if (!auctionItem) {
-      return res.status(404).json({ message: "Auction not found" });
-    }
+    if (!auctionItem) return res.status(404).json({ message: "Auction not found" });
 
     const bidders = auctionItem.bids.sort((a, b) => b.amount - a.amount);
 
-    res.status(200).json({
-      auctionItem,
-      bidders,
-    });
+    res.status(200).json({ auctionItem, bidders });
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
 };
 
-/* GET MY AUCTION ITEMS */
+/* Get my auctions */
 const getMyAuctionItems = async (req, res) => {
   try {
     const items = await Auction.find({ createdBy: req.user._id });
@@ -126,93 +105,57 @@ const getMyAuctionItems = async (req, res) => {
   }
 };
 
-/* DELETE AUCTION ITEM */
+/* Delete auction */
 const removeFromAuction = async (req, res) => {
   try {
     const { id } = req.params;
-
-    if (!mongoose.Types.ObjectId.isValid(id)) {
-      return res.status(400).json({ message: "Invalid auction ID" });
-    }
+    if (!mongoose.Types.ObjectId.isValid(id)) return res.status(400).json({ message: "Invalid auction ID" });
 
     const auctionItem = await Auction.findById(id);
-
-    if (!auctionItem) {
-      return res.status(404).json({ message: "Auction not found" });
-    }
-
-    if (auctionItem.createdBy.toString() !== req.user._id.toString()) {
-      return res.status(403).json({ message: "Not authorized" });
-    }
+    if (!auctionItem) return res.status(404).json({ message: "Auction not found" });
+    if (auctionItem.createdBy.toString() !== req.user._id.toString()) return res.status(403).json({ message: "Not authorized" });
 
     await auctionItem.deleteOne();
-
-    res.status(200).json({
-      message: "Auction item deleted successfully",
-    });
+    res.status(200).json({ message: "Auction item deleted successfully" });
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
 };
 
-/* REPUBLISH AUCTION ITEM */
+/* Republish auction item */
 const republishItem = async (req, res) => {
   try {
     const { id } = req.params;
     const { startTime, endTime } = req.body;
-
-    if (!mongoose.Types.ObjectId.isValid(id)) {
-      return res.status(400).json({ message: "Invalid auction ID" });
-    }
-
-    if (!startTime || !endTime) {
-      return res
-        .status(400)
-        .json({ message: "Start time and End time required" });
-    }
+    if (!mongoose.Types.ObjectId.isValid(id)) return res.status(400).json({ message: "Invalid auction ID" });
+    if (!startTime || !endTime) return res.status(400).json({ message: "Start time and End time required" });
 
     const auctionItem = await Auction.findById(id);
+    if (!auctionItem) return res.status(404).json({ message: "Auction not found" });
 
-    if (!auctionItem) {
-      return res.status(404).json({ message: "Auction not found" });
-    }
+    const now = new Date();
+    const start = new Date(startTime);
+    const end = new Date(endTime);
 
-    if (new Date(auctionItem.endTime) > Date.now()) {
-      return res
-        .status(400)
-        .json({ message: "Auction is still active" });
-    }
+    if (auctionItem.status === "Live") return res.status(400).json({ message: "Auction is still active" });
+    if (start < now) return res.status(400).json({ message: "Start time must be in future" });
+    if (start >= end) return res.status(400).json({ message: "Start time must be less than end time" });
 
-    if (new Date(startTime) < Date.now()) {
-      return res
-        .status(400)
-        .json({ message: "Start time must be in future" });
-    }
-
-    if (new Date(startTime) >= new Date(endTime)) {
-      return res
-        .status(400)
-        .json({ message: "Start time must be less than end time" });
-    }
-
-    auctionItem.startTime = startTime;
-    auctionItem.endTime = endTime;
+    auctionItem.startTime = start;
+    auctionItem.endTime = end;
     auctionItem.bids = [];
-    auctionItem.currentBid = 0;
+    auctionItem.currentBid = auctionItem.startingBid;
     auctionItem.highestBidder = null;
+    auctionItem.status = start > now ? "Upcoming" : "Live";
+    auctionItem.isProcessed = false;
 
     await auctionItem.save();
-
-    res.status(200).json({
-      message: "Auction republished successfully",
-      auctionItem,
-    });
+    res.status(200).json({ message: "Auction republished successfully", auctionItem });
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
 };
 
-/* ✅ NAMED EXPORTS */
 export {
   addNewAuctionItem,
   getAllItems,
