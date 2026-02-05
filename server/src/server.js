@@ -4,15 +4,16 @@ import cookieParser from "cookie-parser";
 import http from "http";
 import { Server } from "socket.io";
 import fileUpload from "express-fileupload";
+
 import { connectDB } from "./config/db.js";
-import { endedAuctionCron } from "./cron/endedAuctionCron.js";
 import connectCloudinary from "./config/cloudinary.js";
+import { auctionCron } from "./cron/auctionCron.js";
+
 import authRoutes from "./routes/authRoutes.js";
 import auctionRoutes from "./routes/auctionRoutes.js";
 import bidRoutes from "./routes/bidRoutes.js";
 
 dotenv.config();
-
 const app = express();
 
 app.use(express.json());
@@ -23,46 +24,38 @@ connectCloudinary();
 
 const server = http.createServer(app);
 
-/* socket.io */
-const io = new Server(server, {
-  cors: { origin: "*" },
-});
+// --- Create Socket.IO before routes ---
+const io = new Server(server, { cors: { origin: "*" } });
+app.set("io", io); // make io accessible in controllers
 
+// --- Routes ---
 app.use("/api/auth", authRoutes);
 app.use("/api/auctions", auctionRoutes);
-app.use("/api/bids", bidRoutes(io)); 
+app.use("/api/bids", bidRoutes(io)); // pass io
 
 app.get("/", (_req, res) => {
-  res.json({
-    name: process.env.NAME,
-    version: process.env.VERSION,
-    message: "Server is running",
-  });
+  res.json({ name: process.env.NAME, version: process.env.VERSION, message: "Server is running" });
 });
 
-/* socket connection */
+// --- Socket connection ---
 io.on("connection", (socket) => {
   console.log("User connected:", socket.id);
-
   socket.on("disconnect", () => {
     console.log("User disconnected:", socket.id);
   });
 });
 
-const PORT = process.env.PORT || 8000;
+// --- Start auction cron ---
+auctionCron(io);
 
+const PORT = process.env.PORT || 8000;
 const startServer = async () => {
   try {
     await connectDB();
-
-    server.listen(PORT, () => {
-      console.log(
-        `${process.env.NAME} running on http://localhost:${PORT} [${process.env.NODE_ENV}]`
-      );
-    });
+    server.listen(PORT, () => console.log(`${process.env.NAME} running on http://localhost:${PORT}`));
   } catch (err) {
     console.error("Database connection failed:", err.message);
   }
 };
-endedAuctionCron();
+
 startServer();
