@@ -9,6 +9,11 @@ const config = {
   name: process.env.NAME || "Auction Platform",
   version: process.env.VERSION || "1.0.0",
   jwtSecret: process.env.JWT_SECRET || "",
+    cloudinary: {
+    cloudName: process.env.CLOUDINARY_CLOUD_NAME || "",
+    apiKey: process.env.CLOUDINARY_API_KEY || "",
+    apiSecret: process.env.CLOUDINARY_API_SECRET || "",
+  },
   
   smtp_mail: process.env.SMTP_MAIL || "",
   smtp_password: process.env.SMTP_PASSWORD || "",
