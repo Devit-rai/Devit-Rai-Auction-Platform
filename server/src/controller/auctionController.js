@@ -130,18 +130,6 @@ export const getAuctionDetails = async (req, res) => {
   }
 };
 
-/* Get My Auctions */
-export const getMyAuctionItems = async (req, res) => {
-  try {
-    const items = await Auction.find({
-      createdBy: req.user._id,
-    }).sort({ createdAt: -1 });
-
-    res.status(200).json({ items });
-  } catch (error) {
-    res.status(500).json({ message: error.message });
-  }
-};
 
 /* Delete Auction */
 export const removeFromAuction = async (req, res) => {

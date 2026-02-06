@@ -6,7 +6,7 @@ export const auctionCron = (io) => {
     // runs every second (better for testing)
 
     const now = new Date();
-    console.log("Cron running:", now.toLocaleTimeString());
+    // console.log("Cron running:", now.toLocaleTimeString());
 
     const auctions = await Auction.find({ isProcessed: false });
 
@@ -35,7 +35,7 @@ export const auctionCron = (io) => {
       if (updated) {
         await auction.save();
 
-        // REALTIME SOCKET EMIT
+        // Real-time update via Socket.IO
         io.emit("auctionStatusUpdated", {
           auctionId: auction._id,
           status: auction.status,
