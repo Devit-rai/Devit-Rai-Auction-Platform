@@ -1,5 +1,7 @@
 import cron from "node-cron";
 import { Auction } from "../models/Auction.js";
+import { sendWinnerEmail } from "../utils/auctionWinner.js";
+
 
 export const auctionCron = (io) => {
   cron.schedule("*/1 * * * * *", async () => {
@@ -29,7 +31,22 @@ export const auctionCron = (io) => {
         auction.status = "Ended";
         auction.isProcessed = true;
         updated = true;
-        console.log("Auction ENDED:", auction._id);
+
+        // Determine winner
+        if (auction.bids.length > 0) {
+          // Sort bids descending by amount
+          const sortedBids = auction.bids.sort((a, b) => b.amount - a.amount);
+          const winner = sortedBids[0]; // highest bidder
+          auction.winner = {
+            userId: winner.userId,
+            userName: winner.userName,
+            amount: winner.amount,
+          };
+
+          // Send email to winner
+          sendWinnerEmail(winner.userId, auction);
+        }
+
       }
 
       if (updated) {
