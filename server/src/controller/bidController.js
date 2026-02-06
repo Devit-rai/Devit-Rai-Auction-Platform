@@ -3,22 +3,40 @@ import { Auction } from "../models/Auction.js";
 import { Bid } from "../models/Bid.js";
 import User from "../models/User.js";
 
-/* Place bide */
+/* Place Bid */
 const placeBid = (io) => async (req, res) => {
   try {
     const { id } = req.params;
     const { amount } = req.body;
 
+    /* Validate auction ID */
     if (!mongoose.Types.ObjectId.isValid(id)) {
       return res.status(400).json({ message: "Invalid auction ID" });
     }
 
+    /* Find auction */
     const auctionItem = await Auction.findById(id);
-
     if (!auctionItem) {
       return res.status(404).json({ message: "Auction item not found" });
     }
 
+    const now = new Date();
+
+    /* Allow bidding only when auction is LIVE */
+    if (auctionItem.status !== "Live") {
+      return res.status(400).json({
+        message: "Bidding allowed only when auction is live",
+      });
+    }
+
+    /* Double check using time (important for real systems) */
+    if (now < auctionItem.startTime || now >= auctionItem.endTime) {
+      return res.status(400).json({
+        message: "Auction is not currently active",
+      });
+    }
+
+    /* Validate amount */
     if (!amount) {
       return res.status(400).json({ message: "Please enter bid amount" });
     }
@@ -35,6 +53,7 @@ const placeBid = (io) => async (req, res) => {
       });
     }
 
+    /* Check existing bid */
     let existingBid = await Bid.findOne({
       "bidder.id": req.user._id,
       auctionItem: auctionItem._id,
@@ -74,7 +93,7 @@ const placeBid = (io) => async (req, res) => {
 
     await auctionItem.save();
 
-    /* Socket live updates */
+    /* Socket live update */
     if (io) {
       io.emit(`bidUpdate-${auctionItem._id}`, {
         auctionId: auctionItem._id,
