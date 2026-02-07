@@ -2,62 +2,87 @@ import cron from "node-cron";
 import { Auction } from "../models/Auction.js";
 import { sendWinnerEmail } from "../utils/auctionWinner.js";
 
-
 export const auctionCron = (io) => {
   cron.schedule("*/1 * * * * *", async () => {
-    // runs every second (better for testing)
+    try {
+      const now = new Date();
 
-    const now = new Date();
-    // console.log("Cron running:", now.toLocaleTimeString());
+      const auctions = await Auction.find({ isProcessed: false });
 
-    const auctions = await Auction.find({ isProcessed: false });
+      for (let auction of auctions) {
+        let updated = false;
 
-    for (let auction of auctions) {
-      let updated = false;
+        /* Upcomming -> Live */
+        if (
+          now >= auction.startTime &&
+          now < auction.endTime &&
+          auction.status !== "Live"
+        ) {
+          auction.status = "Live";
+          updated = true;
 
-      // Upcoming → Live
-      if (
-        now >= auction.startTime &&
-        now < auction.endTime &&
-        auction.status !== "Live"
-      ) {
-        auction.status = "Live";
-        updated = true;
-        console.log("Auction LIVE:", auction._id);
-      }
-
-      // Live → Ended
-      if (now >= auction.endTime && auction.status !== "Ended") {
-        auction.status = "Ended";
-        auction.isProcessed = true;
-        updated = true;
-
-        // Determine winner
-        if (auction.bids.length > 0) {
-          // Sort bids descending by amount
-          const sortedBids = auction.bids.sort((a, b) => b.amount - a.amount);
-          const winner = sortedBids[0]; // highest bidder
-          auction.winner = {
-            userId: winner.userId,
-            userName: winner.userName,
-            amount: winner.amount,
-          };
-
-          // Send email to winner
-          sendWinnerEmail(winner.userId, auction);
+          console.log(`Auction LIVE: ${auction._id}`);
         }
 
-      }
+        /* Live -> Ended */
+        if (now >= auction.endTime && auction.status !== "Ended") {
+          auction.status = "Ended";
+          auction.isProcessed = true;
+          updated = true;
 
-      if (updated) {
-        await auction.save();
+          console.log(`Auction ENDED: ${auction._id}`);
 
-        // Real-time update via Socket.IO
-        io.emit("auctionStatusUpdated", {
-          auctionId: auction._id,
-          status: auction.status,
-        });
+          if (auction.bids && auction.bids.length > 0) {
+            const sortedBids = auction.bids.sort(
+              (a, b) => b.amount - a.amount
+            );
+
+            const winner = sortedBids[0];
+
+            auction.winner = {
+              userId: winner.userId,
+              userName: winner.userName,
+              amount: winner.amount,
+            };
+
+            await sendWinnerEmail(winner.userId, auction);
+          }
+        }
+
+        /* Live Countdown */
+        if (auction.status === "Live") {
+          const remainingMs =
+            new Date(auction.endTime).getTime() - now.getTime();
+
+          if (remainingMs > 0) {
+            const minutes = Math.floor(remainingMs / 60000);
+            const seconds = Math.floor((remainingMs % 60000) / 1000);
+
+            console.log(
+              `Auction ${auction._id} Time Left: ${minutes}m ${seconds}s`
+            );
+
+            io.emit("auctionCountdown", {
+              auctionId: auction._id,
+              endTime: auction.endTime,
+            });
+          }
+        }
+
+        /* Save Realtime update */
+        if (updated) {
+          await auction.save();
+
+          io.emit("auctionStatusUpdated", {
+            auctionId: auction._id,
+            status: auction.status,
+            startTime: auction.startTime,
+            endTime: auction.endTime,
+          });
+        }
       }
+    } catch (error) {
+      console.error("Auction Cron Error:", error.message);
     }
   });
 };
