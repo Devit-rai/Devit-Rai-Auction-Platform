@@ -94,13 +94,11 @@ const placeBid = (io) => async (req, res) => {
     await auctionItem.save();
 
     /* Socket live update */
-    if (io) {
-      io.emit(`bidUpdate-${auctionItem._id}`, {
-        auctionId: auctionItem._id,
-        amount,
-        bidder: req.user._id,
-      });
-    }
+    io.to(auctionItem._id.toString()).emit("bidUpdate", {
+      auctionId: auctionItem._id,
+      currentBid: auctionItem.currentBid,
+      bidder: req.user._id,
+    });
 
     res.status(201).json({
       message: "Bid placed successfully",
