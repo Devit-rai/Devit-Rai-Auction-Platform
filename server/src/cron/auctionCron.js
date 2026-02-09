@@ -33,7 +33,9 @@ export const auctionCron = (io) => {
           console.log(`Auction ENDED: ${auction._id}`);
 
           if (auction.bids && auction.bids.length > 0) {
-            const sortedBids = auction.bids.sort((a, b) => b.amount - a.amount);
+            const sortedBids = auction.bids.sort(
+              (a, b) => b.amount - a.amount
+            );
 
             const winner = sortedBids[0];
 
@@ -57,10 +59,10 @@ export const auctionCron = (io) => {
             const seconds = Math.floor((remainingMs % 60000) / 1000);
 
             console.log(
-              `Auction ${auction._id} Time Left: ${minutes}m ${seconds}s`,
+              `Auction ${auction._id} Time Left: ${minutes}m ${seconds}s`
             );
 
-            io.to(auction._id.toString()).emit("auctionCountdown", {
+            io.emit("auctionCountdown", {
               auctionId: auction._id,
               endTime: auction.endTime,
             });
