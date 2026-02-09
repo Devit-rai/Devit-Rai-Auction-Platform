@@ -60,7 +60,7 @@ const placeBid = (io) => async (req, res) => {
     });
 
     let existingBidInAuction = auctionItem.bids.find(
-      (bid) => bid.userId.toString() === req.user._id.toString()
+      (bid) => bid.userId.toString() === req.user._id.toString(),
     );
 
     if (existingBid && existingBidInAuction) {
@@ -94,13 +94,12 @@ const placeBid = (io) => async (req, res) => {
     await auctionItem.save();
 
     /* Socket live update */
-    if (io) {
-      io.emit(`bidUpdate-${auctionItem._id}`, {
-        auctionId: auctionItem._id,
-        amount,
-        bidder: req.user._id,
-      });
-    }
+    io.to(auctionItem._id.toString()).emit("bidUpdate", {
+      auctionId: auctionItem._id,
+      amount,
+      bidder: req.user._id,
+      currentBid: auctionItem.currentBid,
+    });
 
     res.status(201).json({
       message: "Bid placed successfully",
