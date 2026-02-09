@@ -39,6 +39,16 @@ app.get("/", (_req, res) => {
 // --- Socket connection ---
 io.on("connection", (socket) => {
   console.log("User connected:", socket.id);
+
+  socket.on("joinAuction", (auctionId) => {
+    socket.join(auctionId);
+    console.log(`User joined auction room ${auctionId}`);
+  });
+
+  socket.on("leaveAuction", (auctionId) => {
+    socket.leave(auctionId);
+  });
+
   socket.on("disconnect", () => {
     console.log("User disconnected:", socket.id);
   });
