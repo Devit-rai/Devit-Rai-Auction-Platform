@@ -1,6 +1,5 @@
 import express from "express";
 import authController from "../controller/authController.js";
-import auth from "../middlewares/auth.js";
 
 const router = express.Router();
 
@@ -11,7 +10,7 @@ router.post("/signup", authController.signup);
 router.post("/login", authController.login);
 
 // URL: /api/auth/logout
-router.post("/logout", auth, authController.logout);
+router.post("/logout", authController.logout);
 
 // URL: /api/auth/verify-email
 router.post("/verify-email", authController.verifyEmail);

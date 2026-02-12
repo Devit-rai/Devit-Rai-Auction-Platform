@@ -94,43 +94,7 @@ const Landing = () => {
               View Live Auctions
             </button>
           </div>
-          
-          {/* <div className="mt-12 flex items-center gap-6">
-            <div className="flex -space-x-4">
-              {[1,2,3,4].map(i => (
-                <div key={i} className="w-12 h-12 rounded-full border-4 border-white bg-slate-200 overflow-hidden">
-                  <img src={`https://i.pravatar.cc/100?img=${i+10}`} alt="user" />
-                </div>
-              ))}
-            </div>
-            <p className="text-sm font-bold text-slate-500">
-              <span className="text-slate-900">12k+</span> Active Collectors
-            </p>
-          </div> */}
         </div>
-
-        {/* Hero Visual */}
-        {/* <div className="relative">
-          <div className="aspect-[4/5] bg-slate-100 rounded-[40px] overflow-hidden relative shadow-2xl">
-            <img 
-              src="https://images.unsplash.com/photo-1523275335684-37898b6baf30?q=80&w=1000&auto=format&fit=crop" 
-              className="w-full h-full object-cover" 
-              alt="Luxury Item" 
-            />
-            <div className="absolute bottom-8 left-8 right-8 bg-white/90 backdrop-blur-md p-6 rounded-3xl shadow-xl">
-              <div className="flex justify-between items-end">
-                <div>
-                  <p className="text-xs font-bold text-slate-400 uppercase tracking-widest">Current Bid</p>
-                  <p className="text-2xl font-black">Rs45,200.00</p>
-                </div>
-                <div className="text-right">
-                  <p className="text-xs font-bold text-red-500 uppercase tracking-widest animate-pulse">Ends in</p>
-                  <p className="text-xl font-bold">02:45:12</p>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div> */}
       </section>
 
       {/* --- Features --- */}
@@ -154,7 +118,7 @@ const Landing = () => {
         </div>
       </section>
 
-      {/* --- CTA Section --- */}
+      {/* Footer Section */}
       <section className="py-32 px-8 text-center">
         <h2 className="text-5xl font-black mb-6">Ready to find something <span className="text-blue-600">unique?</span></h2>
         <p className="text-slate-500 max-w-xl mx-auto mb-10 text-lg">
