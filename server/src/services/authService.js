@@ -2,6 +2,7 @@ import User from "../models/User.js";
 import bcrypt from "bcryptjs";
 import { generateVerificationCode } from "../utils/otp.js";
 import { sendVerificationCode } from "./emailService.js";
+import { USER, ADMIN, SELLER } from "../constants/roles.js";
 
 const OTP_EXPIRY_MINUTES = 15; // 15 minutes expiry
 
@@ -12,14 +13,25 @@ const signup = async (data) => {
 
   const hashedPassword = bcrypt.hashSync(data.password, 10);
 
+  let selectedRole = USER;
+
+  if (data.role === SELLER) {
+    selectedRole = SELLER;
+  }
+
+  if (data.role === ADMIN) {
+    throw { statusCode: 403, message: "Admin cannot be self assigned" };
+  }
+
   const verificationCode = generateVerificationCode();
-  const verificationCodeExpiryTime = Date.now() + OTP_EXPIRY_MINUTES * 60 * 1000;
+  const verificationCodeExpiryTime =
+    Date.now() + OTP_EXPIRY_MINUTES * 60 * 1000;
 
   const signupUser = await User.create({
     name: data.name,
     email: data.email,
     password: hashedPassword,
-    phone: data.phone,
+    roles: [selectedRole],
     isVerified: false,
     verificationCode,
     verificationCodeExpiryTime,
@@ -41,7 +53,8 @@ const signup = async (data) => {
 const verifyEmail = async (email, code) => {
   const user = await User.findOne({ email });
   if (!user) throw { statusCode: 404, message: "User not found" };
-  if (user.isVerified) throw { statusCode: 400, message: "User already verified" };
+  if (user.isVerified)
+    throw { statusCode: 400, message: "User already verified" };
 
   if (!user.verificationCode)
     throw { statusCode: 400, message: "Verification code missing" };
@@ -64,7 +77,8 @@ const verifyEmail = async (email, code) => {
 const resendOtp = async (email) => {
   const user = await User.findOne({ email });
   if (!user) throw { statusCode: 404, message: "User not found" };
-  if (user.isVerified) throw { statusCode: 400, message: "User already verified" };
+  if (user.isVerified)
+    throw { statusCode: 400, message: "User already verified" };
 
   const verificationCode = generateVerificationCode();
   user.verificationCode = verificationCode;
@@ -81,7 +95,10 @@ const login = async (data) => {
   const user = await User.findOne({ email: data.email });
   if (!user) throw { statusCode: 404, message: "User not found" };
   if (!user.isVerified)
-    throw { statusCode: 401, message: "Please verify your email before logging in" };
+    throw {
+      statusCode: 401,
+      message: "Please verify your email before logging in",
+    };
 
   const isMatch = bcrypt.compareSync(data.password, user.password);
   if (!isMatch) throw { statusCode: 401, message: "Invalid email or password" };

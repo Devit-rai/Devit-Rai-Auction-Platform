@@ -1,8 +1,15 @@
-const roleBasedAuth =(roles) => {
-    return (req, res, next) => {  
-        if (req.user.roles.includes(roles)) return next();
+const roleBasedAuth = (allowedRoles) => {
+  return (req, res, next) => {
+    const hasRole = req.user.roles.some(role =>
+      allowedRoles.includes(role)
+    );
 
-        res.status(403).json({ message: "Forbidden: You don't have permission to access this resource" });
-}
-}
-export default roleBasedAuth; 
+    if (hasRole) return next();
+
+    res.status(403).json({
+      message: "Forbidden: You don't have permission",
+    });
+  };
+};
+
+export default roleBasedAuth;
