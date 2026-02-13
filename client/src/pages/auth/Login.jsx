@@ -13,39 +13,58 @@ import api from "../../api/axios";
 
 const Login = () => {
   const navigate = useNavigate();
-  const [formData, setFormData] = useState({ email: "", password: "" });
+
+  const [formData, setFormData] = useState({
+    email: "",
+    password: "",
+  });
+
+  // Fixed: Added the missing state variable
   const [showPass, setShowPass] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
   const handleChange = (e) => {
-    setFormData({ ...formData, [e.target.name]: e.target.value });
+    setFormData({
+      ...formData,
+      [e.target.name]: e.target.value,
+    });
   };
 
-const handleSubmit = async (e) => {
-  e.preventDefault();
-  setLoading(true);
-  try {
-    const res = await api.post("/auth/login", formData);
-    const userData = res.data; 
+  const getRole = (data) => {
+    let role =
+      data.role ||
+      data.roles?.[0] ||
+      data.authorities?.[0] ||
+      data.user?.role ||
+      data.user?.roles?.[0] ||
+      data.user?.authorities?.[0];
 
-    // Save to localStorage so other components can access it
-    localStorage.setItem("user", JSON.stringify(userData));
+    return role?.toString().replace("ROLE_", "").toUpperCase();
+  };
 
-    // Check if roles is an array or a single string
-    const userRole = Array.isArray(userData.roles) ? userData.roles[0] : userData.role;
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setLoading(true);
+    setError("");
 
-    if (userRole === "SELLER") {
-      navigate("/seller"); // Navigates to the Seller Hub
-    } else {
-      navigate("/"); // Navigates to the Landing page for Buyers
+    try {
+      const res = await api.post("/auth/login", formData);
+      const userData = res.data;
+      sessionStorage.setItem("user", JSON.stringify(userData));
+      const role = getRole(userData);
+
+      if (role === "SELLER") {
+        navigate("/seller-dashboard");
+      } else {
+        navigate("/user-dashboard");
+      }
+    } catch (err) {
+      setError(err.response?.data?.message || "Login failed");
+    } finally {
+      setLoading(false);
     }
-  } catch (err) {
-    setError(err.response?.data?.message || "Login failed");
-  } finally {
-    setLoading(false);
-  }
-};
+  };
 
   return (
     <div className="min-h-screen bg-[#f8fafc] flex items-center justify-center p-6 bg-[radial-gradient(circle_at_top_right,_#e2e8f0,_#ffffff)]">
@@ -68,10 +87,7 @@ const handleSubmit = async (e) => {
                 Email Address
               </label>
               <div className="relative">
-                <Mail
-                  className="absolute left-4 top-3.5 text-slate-400"
-                  size={18}
-                />
+                <Mail className="absolute left-4 top-3.5 text-slate-400" size={18} />
                 <input
                   name="email"
                   type="email"
@@ -84,16 +100,11 @@ const handleSubmit = async (e) => {
             </div>
 
             <div className="space-y-1">
-              <div className="flex justify-between items-center ml-1">
-                <label className="text-xs font-bold text-slate-500 uppercase">
-                  Password
-                </label>
-              </div>
+              <label className="text-xs font-bold text-slate-500 uppercase ml-1">
+                Password
+              </label>
               <div className="relative">
-                <Lock
-                  className="absolute left-4 top-3.5 text-slate-400"
-                  size={18}
-                />
+                <Lock className="absolute left-4 top-3.5 text-slate-400" size={18} />
                 <input
                   name="password"
                   type={showPass ? "text" : "password"}
@@ -105,7 +116,7 @@ const handleSubmit = async (e) => {
                 <button
                   type="button"
                   onClick={() => setShowPass(!showPass)}
-                  className="absolute right-4 top-3.5 text-slate-400"
+                  className="absolute right-4 top-3.5 text-slate-400 hover:text-slate-600"
                 >
                   {showPass ? <EyeOff size={18} /> : <Eye size={18} />}
                 </button>
@@ -121,24 +132,16 @@ const handleSubmit = async (e) => {
             <button
               type="submit"
               disabled={loading}
-              className="w-full py-4 bg-slate-900 hover:bg-black text-white rounded-2xl font-bold text-lg flex items-center justify-center gap-2 group mt-2"
+              className="w-full py-4 bg-slate-900 hover:bg-black text-white rounded-2xl font-bold text-lg flex items-center justify-center gap-2 group mt-2 transition-all"
             >
               {loading ? <Loader2 className="animate-spin" /> : "Sign In"}
-              {!loading && (
-                <ArrowRight
-                  size={20}
-                  className="group-hover:translate-x-1 transition-transform"
-                />
-              )}
+              {!loading && <ArrowRight size={20} className="group-hover:translate-x-1 transition-transform" />}
             </button>
           </form>
 
           <p className="mt-8 text-center text-sm text-slate-500">
             Don't have an account?{" "}
-            <Link
-              to="/signup"
-              className="text-blue-600 font-bold hover:underline"
-            >
+            <Link to="/signup" className="text-blue-600 font-bold hover:underline">
               Create one
             </Link>
           </p>
