@@ -5,6 +5,8 @@ import Signup from './pages/auth/Signup'
 import Verify from './pages/auth/Verify'
 import Login from './pages/auth/Login'
 import Landing from './pages/landing/Landing'
+import UserDashboard from './pages/dashboard/UserDashboard'
+import SellerDashboard from './pages/dashboard/SellerDashboard'
 
 function App() {
   const [count, setCount] = useState(0)
@@ -17,6 +19,8 @@ function App() {
           <Route path="/signup" element={<Signup/>} />
           <Route path="/verify" element={<Verify/>} />
           <Route path='/login' element={<Login/>} />
+          <Route path='/user-dashboard' element={<UserDashboard/>} />
+          <Route path='/seller-dashboard' element={<SellerDashboard/>} />
         </Routes>
       </Router>
     </>
