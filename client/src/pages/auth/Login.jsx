@@ -22,19 +22,30 @@ const Login = () => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
   };
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    setLoading(true);
-    try {
-      const res = await api.post("/auth/login", formData);
-      localStorage.setItem("user", JSON.stringify(res.data.user)); // Save user data
-      navigate("/"); // Redirect to landing
-    } catch (err) {
-      setError(err.response?.data?.message || "Login failed");
-    } finally {
-      setLoading(false);
+const handleSubmit = async (e) => {
+  e.preventDefault();
+  setLoading(true);
+  try {
+    const res = await api.post("/auth/login", formData);
+    const userData = res.data; 
+
+    // Save to localStorage so other components can access it
+    localStorage.setItem("user", JSON.stringify(userData));
+
+    // Check if roles is an array or a single string
+    const userRole = Array.isArray(userData.roles) ? userData.roles[0] : userData.role;
+
+    if (userRole === "SELLER") {
+      navigate("/seller"); // Navigates to the Seller Hub
+    } else {
+      navigate("/"); // Navigates to the Landing page for Buyers
     }
-  };
+  } catch (err) {
+    setError(err.response?.data?.message || "Login failed");
+  } finally {
+    setLoading(false);
+  }
+};
 
   return (
     <div className="min-h-screen bg-[#f8fafc] flex items-center justify-center p-6 bg-[radial-gradient(circle_at_top_right,_#e2e8f0,_#ffffff)]">

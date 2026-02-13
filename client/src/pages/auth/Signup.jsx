@@ -1,25 +1,34 @@
-import React, { useState } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
-import { User, ShieldCheck, Mail, Lock, Briefcase, Eye, EyeOff, ShieldAlert, Loader2 } from 'lucide-react';
-import api from '../../api/axios';
+import React, { useState } from "react";
+import { useNavigate, Link } from "react-router-dom";
+import {
+  User,
+  ShieldCheck,
+  Mail,
+  Lock,
+  Briefcase,
+  Eye,
+  EyeOff,
+  Loader2,
+} from "lucide-react";
+import api from "../../api/axios";
 
 const Signup = () => {
   const navigate = useNavigate();
   const [formData, setFormData] = useState({
-    name: '',
-    email: '',
-    password: '',
-    confirmPassword: '',
-    roles: ['USER'], 
+    name: "",
+    email: "",
+    password: "",
+    confirmPassword: "",
+    roles: ["USER"], // Default role
   });
 
   const [showPass, setShowPass] = useState(false);
-  const [error, setError] = useState('');
+  const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
 
   const handleChange = (e) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
-    if (error) setError('');
+    if (error) setError("");
   };
 
   const handleRoleSelect = (role) => {
@@ -35,11 +44,18 @@ const Signup = () => {
 
     setLoading(true);
     try {
-      await api.post('/auth/signup', formData);
-      localStorage.setItem('tempEmail', formData.email); // Store for verify page
-      navigate('/verify');
+      const payload = {
+        ...formData,
+        role: formData.roles[0],
+      };
+
+      await api.post("/auth/signup", payload);
+      localStorage.setItem("tempEmail", formData.email);
+      navigate("/verify");
     } catch (err) {
-      setError(err.response?.data?.message || "Registration failed. Try again.");
+      setError(
+        err.response?.data?.message || "Registration failed. Try again.",
+      );
     } finally {
       setLoading(false);
     }
@@ -47,23 +63,30 @@ const Signup = () => {
 
   return (
     <div className="min-h-screen bg-[#f8fafc] flex items-center justify-center p-6 bg-[radial-gradient(circle_at_top_right,_#e2e8f0,_#ffffff)]">
-      <div className="w-full max-w-xl bg-white rounded-3xl shadow-2xl shadow-slate-200 border border-slate-100 overflow-hidden">
+      <div className="w-full max-w-xl bg-white rounded-3xl shadow-2xl border border-slate-100 overflow-hidden">
+        {/* Decorative Top Bar */}
         <div className="h-2 bg-gradient-to-r from-blue-600 via-indigo-500 to-purple-600" />
 
         <div className="p-8 lg:p-12">
           <div className="text-center mb-10">
-            <h2 className="text-3xl font-extrabold text-slate-900 tracking-tight">Create Account</h2>
-            <p className="text-slate-500 mt-2">Join the marketplace and start exploring.</p>
+            <h2 className="text-3xl font-extrabold text-slate-900 tracking-tight">
+              Create Account
+            </h2>
+            <p className="text-slate-500 mt-2">
+              Join the marketplace and start exploring.
+            </p>
           </div>
 
           <form onSubmit={handleSubmit} className="space-y-6">
+            {/* Role Selection */}
             <div>
-              <label className="block text-sm font-bold text-slate-700 mb-3 text-center">Select Your Account Type</label>
-              <div className="grid grid-cols-3 gap-3">
+              <label className="block text-sm font-bold text-slate-700 mb-3 text-center">
+                Select Your Account Type
+              </label>
+              <div className="grid grid-cols-2 gap-4">
                 {[
-                  { id: 'USER', label: 'Buyer', icon: User },
-                  { id: 'SELLER', label: 'Seller', icon: Briefcase },
-                  { id: 'ADMIN', label: 'Admin', icon: ShieldAlert },
+                  { id: "USER", label: "Buyer", icon: User },
+                  { id: "SELLER", label: "Seller", icon: Briefcase },
                 ].map((role) => (
                   <button
                     key={role.id}
@@ -71,69 +94,142 @@ const Signup = () => {
                     onClick={() => handleRoleSelect(role.id)}
                     className={`flex flex-col items-center gap-2 p-4 rounded-2xl border-2 transition-all ${
                       formData.roles.includes(role.id)
-                        ? 'border-blue-600 bg-blue-50 text-blue-700 shadow-sm'
-                        : 'border-slate-50 bg-slate-50 text-slate-400 hover:border-slate-200'
+                        ? "border-blue-600 bg-blue-50 text-blue-700 shadow-md"
+                        : "border-slate-100 bg-slate-50 text-slate-400 hover:border-slate-200"
                     }`}
                   >
-                    <role.icon size={22} />
-                    <span className="text-xs font-bold uppercase tracking-wider">{role.label}</span>
+                    <role.icon size={24} />
+                    <span className="text-xs font-bold uppercase tracking-wider">
+                      {role.label}
+                    </span>
                   </button>
                 ))}
               </div>
             </div>
 
+            {/* Name & Email Row */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div className="space-y-1">
-                <label className="text-xs font-bold text-slate-500 uppercase ml-1">Full Name</label>
+                <label className="text-xs font-bold text-slate-500 uppercase ml-1">
+                  Full Name
+                </label>
                 <div className="relative">
-                  <User className="absolute left-4 top-3.5 text-slate-400" size={18} />
-                  <input name="name" type="text" required onChange={handleChange} className="w-full pl-12 pr-4 py-3.5 bg-slate-50 border-none rounded-2xl focus:ring-2 focus:ring-blue-500 transition-all" placeholder="Alex Doe" />
+                  <User
+                    className="absolute left-4 top-3.5 text-slate-400"
+                    size={18}
+                  />
+                  <input
+                    name="name"
+                    type="text"
+                    required
+                    onChange={handleChange}
+                    className="w-full pl-12 pr-4 py-3.5 bg-slate-50 border-none rounded-2xl focus:ring-2 focus:ring-blue-500 transition-all outline-none"
+                    placeholder="John Doe"
+                  />
                 </div>
               </div>
 
               <div className="space-y-1">
-                <label className="text-xs font-bold text-slate-500 uppercase ml-1">Email</label>
+                <label className="text-xs font-bold text-slate-500 uppercase ml-1">
+                  Email
+                </label>
                 <div className="relative">
-                  <Mail className="absolute left-4 top-3.5 text-slate-400" size={18} />
-                  <input name="email" type="email" required onChange={handleChange} className="w-full pl-12 pr-4 py-3.5 bg-slate-50 border-none rounded-2xl focus:ring-2 focus:ring-blue-500 transition-all" placeholder="alex@example.com" />
+                  <Mail
+                    className="absolute left-4 top-3.5 text-slate-400"
+                    size={18}
+                  />
+                  <input
+                    name="email"
+                    type="email"
+                    required
+                    onChange={handleChange}
+                    className="w-full pl-12 pr-4 py-3.5 bg-slate-50 border-none rounded-2xl focus:ring-2 focus:ring-blue-500 transition-all outline-none"
+                    placeholder="john@example.com"
+                  />
                 </div>
               </div>
             </div>
 
+            {/* Passwords Row */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div className="space-y-1">
-                <label className="text-xs font-bold text-slate-500 uppercase ml-1">Password</label>
+                <label className="text-xs font-bold text-slate-500 uppercase ml-1">
+                  Password
+                </label>
                 <div className="relative">
-                  <Lock className="absolute left-4 top-3.5 text-slate-400" size={18} />
-                  <input name="password" type={showPass ? "text" : "password"} required minLength={8} onChange={handleChange} className="w-full pl-12 pr-12 py-3.5 bg-slate-50 border-none rounded-2xl focus:ring-2 focus:ring-blue-500 transition-all" placeholder="••••••••" />
-                  <button type="button" onClick={() => setShowPass(!showPass)} className="absolute right-4 top-3.5 text-slate-400 hover:text-slate-600">
+                  <Lock
+                    className="absolute left-4 top-3.5 text-slate-400"
+                    size={18}
+                  />
+                  <input
+                    name="password"
+                    type={showPass ? "text" : "password"}
+                    required
+                    minLength={8}
+                    onChange={handleChange}
+                    className="w-full pl-12 pr-12 py-3.5 bg-slate-50 border-none rounded-2xl focus:ring-2 focus:ring-blue-500 transition-all outline-none"
+                    placeholder="••••••••"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowPass(!showPass)}
+                    className="absolute right-4 top-3.5 text-slate-400 hover:text-slate-600"
+                  >
                     {showPass ? <EyeOff size={18} /> : <Eye size={18} />}
                   </button>
                 </div>
               </div>
 
               <div className="space-y-1">
-                <label className="text-xs font-bold text-slate-500 uppercase ml-1">Confirm Password</label>
+                <label className="text-xs font-bold text-slate-500 uppercase ml-1">
+                  Confirm Password
+                </label>
                 <div className="relative">
-                  <ShieldCheck className="absolute left-4 top-3.5 text-slate-400" size={18} />
-                  <input name="confirmPassword" type="password" required onChange={handleChange} className={`w-full pl-12 pr-4 py-3.5 bg-slate-50 border-none rounded-2xl focus:ring-2 transition-all ${error.includes('match') ? 'ring-2 ring-red-500' : 'focus:ring-blue-500'}`} placeholder="••••••••" />
+                  <ShieldCheck
+                    className="absolute left-4 top-3.5 text-slate-400"
+                    size={18}
+                  />
+                  <input
+                    name="confirmPassword"
+                    type="password"
+                    required
+                    onChange={handleChange}
+                    className={`w-full pl-12 pr-4 py-3.5 bg-slate-50 border-none rounded-2xl focus:ring-2 transition-all outline-none ${
+                      error.includes("match")
+                        ? "ring-2 ring-red-500"
+                        : "focus:ring-blue-500"
+                    }`}
+                    placeholder="••••••••"
+                  />
                 </div>
               </div>
             </div>
 
-            {error && <p className="text-red-500 text-sm font-medium text-center bg-red-50 py-2 rounded-xl">{error}</p>}
+            {/* Error Message */}
+            {error && (
+              <div className="bg-red-50 border border-red-100 text-red-600 px-4 py-3 rounded-xl text-sm font-medium text-center">
+                {error}
+              </div>
+            )}
 
+            {/* Submit Button */}
             <button
               type="submit"
               disabled={loading}
-              className="w-full py-4 bg-slate-900 hover:bg-black text-white rounded-2xl font-bold text-lg shadow-xl shadow-slate-200 transition-all active:scale-[0.98] mt-4 flex items-center justify-center gap-2"
+              className="w-full py-4 bg-slate-900 hover:bg-black text-white rounded-2xl font-bold text-lg shadow-xl shadow-slate-200 transition-all active:scale-[0.98] mt-4 flex items-center justify-center gap-2 disabled:opacity-70 disabled:cursor-not-allowed"
             >
               {loading ? <Loader2 className="animate-spin" /> : "Sign Up"}
             </button>
           </form>
 
           <p className="mt-8 text-center text-sm text-slate-500">
-            Already have an account? <Link to="/login" className="text-blue-600 font-bold hover:underline">Log In</Link>
+            Already have an account?{" "}
+            <Link
+              to="/login"
+              className="text-blue-600 font-bold hover:underline"
+            >
+              Log In
+            </Link>
           </p>
         </div>
       </div>
