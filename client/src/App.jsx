@@ -5,8 +5,8 @@ import Signup from './pages/auth/Signup'
 import Verify from './pages/auth/Verify'
 import Login from './pages/auth/Login'
 import Landing from './pages/landing/Landing'
-import UserDashboard from './pages/dashboard/UserDashboard'
-import SellerDashboard from './pages/dashboard/SellerDashboard'
+import UserDashboard from './pages/dashboard/user/UserDashboard'
+import SellerDashboard from './pages/dashboard/seller/SellerDashboard'
 
 function App() {
   const [count, setCount] = useState(0)
