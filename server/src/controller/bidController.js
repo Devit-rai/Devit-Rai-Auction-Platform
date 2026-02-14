@@ -60,7 +60,7 @@ const placeBid = (io) => async (req, res) => {
     });
 
     let existingBidInAuction = auctionItem.bids.find(
-      (bid) => bid.userId.toString() === req.user._id.toString()
+      (bid) => bid.userId.toString() === req.user._id.toString(),
     );
 
     if (existingBid && existingBidInAuction) {
@@ -92,12 +92,19 @@ const placeBid = (io) => async (req, res) => {
     auctionItem.highestBidder = req.user._id;
 
     await auctionItem.save();
+    
+    const latestBid = {
+      userId: req.user._id,
+      userName: req.user.name,
+      amount: amount,
+      timestamp: new Date(),
+    };
 
     /* Socket live update */
     io.to(auctionItem._id.toString()).emit("bidUpdate", {
       auctionId: auctionItem._id,
-      currentBid: auctionItem.currentBid,
-      bidder: req.user._id,
+      currentBid: amount,
+      newBid: latestBid,
     });
 
     res.status(201).json({
