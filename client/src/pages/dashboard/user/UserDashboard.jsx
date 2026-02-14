@@ -12,6 +12,8 @@ import {
   Laptop,
   Gem,
   User,
+  LayoutDashboard,
+  ShoppingBag
 } from "lucide-react";
 
 const UserDashboard = () => {
@@ -29,128 +31,129 @@ const UserDashboard = () => {
 
   return (
     <div className="min-h-screen bg-slate-50 text-slate-900 font-sans">
+      {/* Unified Navigation Bar */}
       <nav className="flex items-center justify-between px-6 lg:px-24 py-4 bg-white border-b border-slate-200 sticky top-0 z-50 shadow-sm">
-        <div
-          className="flex items-center gap-2 cursor-pointer group"
+        <div 
+          className="flex items-center gap-2 cursor-pointer group" 
           onClick={() => navigate("/user-dashboard")}
         >
-          <div className="w-9 h-9 bg-blue-600 rounded-xl flex items-center justify-center shadow-lg shadow-blue-200 group-hover:scale-105 transition-transform">
-            <Gavel size={20} className="text-white" />
+          <div className="w-10 h-10 bg-blue-600 rounded-xl flex items-center justify-center shadow-lg shadow-blue-200 group-hover:rotate-12 transition-transform">
+            <Gavel size={22} className="text-white" />
           </div>
-          <span className="text-xl font-bold text-slate-900 tracking-tight">
-            AuctionPro
+          <span className="text-xl font-black text-slate-900 tracking-tight">
+            Auction<span className="text-blue-600">Pro</span>
           </span>
         </div>
 
-        <div className="hidden lg:flex items-center gap-8 text-sm font-semibold text-slate-500">
-          <Link to="/user-dashboard" className="text-blue-600 cursor-pointer">
-            Home
-          </Link>
-          <button
-            onClick={() => navigate("/auctions")}
-            className="hover:text-blue-600 transition cursor-pointer"
+        <div className="hidden lg:flex items-center gap-6">
+          <button 
+            onClick={() => navigate("/user-dashboard")}
+            className="flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-bold bg-blue-50 text-blue-600"
           >
-            Auctions
+            <LayoutDashboard size={18} /> Dashboard
           </button>
-          <button className="hover:text-blue-600 transition cursor-pointer">
-            Categories
-          </button>
-          <button className="hover:text-blue-600 transition cursor-pointer">
-            About
+          <button 
+            onClick={() => navigate("/auctions")}
+            className="flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-bold text-slate-500 hover:bg-slate-50 hover:text-blue-600 transition-all"
+          >
+            <ShoppingBag size={18} /> Live Auctions
           </button>
         </div>
 
-        {/* Search & Profile Section */}
         <div className="flex items-center gap-4">
           <div className="relative hidden sm:flex items-center">
             <Search className="absolute left-4 text-slate-400" size={18} />
             <input
               type="text"
-              placeholder="Search auctions..."
-              className="bg-slate-100 border-none rounded-full py-2.5 pl-11 pr-4 w-48 lg:w-64 outline-none focus:ring-2 focus:ring-blue-500/20 transition-all text-sm"
+              placeholder="Search items..."
+              className="bg-slate-100 border-none rounded-2xl py-2.5 pl-11 pr-4 w-48 lg:w-64 outline-none focus:ring-2 focus:ring-blue-500/20 transition-all text-sm font-bold"
             />
           </div>
 
           <div className="h-8 w-[1px] bg-slate-200 mx-2 hidden sm:block" />
 
-          <div className="flex flex-col text-right">
-            <span className="text-sm font-bold text-slate-900 capitalize leading-tight">
-              {userName}
-            </span>
-            <span className="text-[10px] font-bold text-blue-600 uppercase tracking-widest mt-0.5">
-              {userRole}
-            </span>
+          <div className="flex items-center gap-3">
+            <div className="flex flex-col text-right hidden md:flex">
+              <span className="text-sm font-black text-slate-900 capitalize leading-tight">
+                {userName}
+              </span>
+              <span className="text-[10px] font-bold text-blue-600 uppercase tracking-widest">
+                {userRole}
+              </span>
+            </div>
+            {/* User Profile Trigger */}
+            <div className="w-10 h-10 rounded-xl bg-slate-100 border border-slate-200 flex items-center justify-center text-slate-600 hover:bg-slate-200 transition-colors cursor-pointer">
+              <User size={20} />
+            </div>
+            <button
+              onClick={handleLogout}
+              className="w-10 h-10 rounded-xl bg-red-50 text-red-500 flex items-center justify-center hover:bg-red-500 hover:text-white transition-all duration-300 shadow-sm"
+              title="Logout"
+            >
+              <LogOut size={20} />
+            </button>
           </div>
-
-          {/* User Avatar */}
-          <div className="w-10 h-10 rounded-full bg-slate-100 border border-slate-200 flex items-center justify-center text-slate-600 shadow-sm cursor-pointer hover:bg-slate-200 transition-colors">
-            <User size={20} />
-          </div>
-
-          {/* Logout Button */}
-          <button
-            onClick={handleLogout}
-            className="w-10 h-10 rounded-xl bg-red-50 border border-red-100 flex items-center justify-center text-red-500 hover:bg-red-500 hover:text-white transition-all duration-300 shadow-sm cursor-pointer"
-          >
-            <LogOut size={20} />
-          </button>
         </div>
       </nav>
 
+      {/* Hero Section */}
       <section className="px-6 lg:px-24 py-16 grid lg:grid-cols-2 gap-12 items-center">
         <div className="space-y-6">
           <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-blue-50 text-blue-600 text-[10px] font-black uppercase tracking-widest border border-blue-100">
             <span className="w-2 h-2 bg-blue-600 rounded-full animate-pulse" />{" "}
-            Live Now
+            Market Active
           </div>
-          <h1 className="text-6xl lg:text-7xl font-extrabold text-slate-900 leading-[1.1]">
+          <h1 className="text-6xl lg:text-7xl font-black text-slate-900 leading-[1.1] tracking-tight">
             Bid Smarter.
             <br />
             <span className="text-blue-600">Win Faster.</span>
           </h1>
-          <p className="text-slate-500 text-lg max-w-md leading-relaxed">
+          <p className="text-slate-500 text-lg max-w-md leading-relaxed font-medium">
             Welcome back,{" "}
-            <span className="text-slate-900 font-semibold capitalize">
+            <span className="text-slate-900 font-bold capitalize">
               {userName}
             </span>
-            . Browse exclusive lots and manage your active bids.
+            . Discover high-value lots and track your winning bids in real-time.
           </p>
           <div className="flex items-center gap-4 pt-4">
             <button
               onClick={() => navigate("/auctions")}
-              className="bg-slate-900 hover:bg-black text-white px-8 py-4 rounded-2xl font-bold flex items-center gap-2 transition-all shadow-lg shadow-slate-200 hover:translate-x-1"
+              className="bg-slate-900 hover:bg-blue-600 text-white px-10 py-5 rounded-[2rem] font-black flex items-center gap-2 transition-all shadow-xl shadow-slate-200 hover:-translate-y-1"
             >
-              Browse Auctions <ChevronRight size={18} />
+              Enter Auction Hall <ChevronRight size={20} />
             </button>
           </div>
         </div>
 
+        {/* Featured Card */}
         <div
           className="relative group cursor-pointer"
           onClick={() => navigate("/auctions")}
         >
-          <div className="absolute -inset-1 bg-blue-600/10 rounded-[2.5rem] blur opacity-30 group-hover:opacity-50 transition"></div>
-          <div className="relative bg-white border border-slate-200 rounded-[2.5rem] overflow-hidden shadow-xl shadow-slate-200/50">
-            <img
-              src="https://images.unsplash.com/photo-1523275335684-37898b6baf30?q=80&w=800"
-              className="w-full h-80 object-cover group-hover:scale-105 transition duration-700"
-              alt="Featured"
-            />
-            <div className="absolute bottom-0 inset-x-0 p-8 bg-gradient-to-t from-white via-white/90 to-transparent">
+          <div className="absolute -inset-4 bg-blue-500/5 rounded-[3rem] blur-xl opacity-0 group-hover:opacity-100 transition duration-700"></div>
+          <div className="relative bg-white border border-slate-200 rounded-[3rem] overflow-hidden shadow-2xl shadow-slate-200/50">
+            <div className="h-96 overflow-hidden">
+                <img
+                src="https://images.unsplash.com/photo-1523275335684-37898b6baf30?q=80&w=800"
+                className="w-full h-full object-cover group-hover:scale-110 transition duration-[1.5s]"
+                alt="Featured"
+                />
+            </div>
+            <div className="absolute bottom-0 inset-x-0 p-10 bg-gradient-to-t from-white via-white/95 to-transparent">
               <div className="flex justify-between items-end">
                 <div>
-                  <p className="text-[10px] font-bold text-blue-600 uppercase tracking-widest mb-1">
-                    Featured Lot
-                  </p>
-                  <h3 className="text-2xl font-bold text-slate-900">
-                    Premium Collections
+                  <div className="px-3 py-1 bg-blue-600 text-white text-[9px] font-black uppercase tracking-widest rounded-lg w-fit mb-3">
+                    Featured Item
+                  </div>
+                  <h3 className="text-3xl font-black text-slate-900">
+                    Premium Watch Collection
                   </h3>
                 </div>
                 <div className="text-right">
-                  <p className="text-slate-400 text-[10px] font-bold uppercase mb-1">
-                    Starting From
+                  <p className="text-slate-400 text-[10px] font-black uppercase tracking-widest mb-1">
+                    Current Bid
                   </p>
-                  <p className="text-slate-900 text-2xl font-black">
+                  <p className="text-slate-900 text-3xl font-black">
                     NPR 5,000
                   </p>
                 </div>
@@ -160,17 +163,21 @@ const UserDashboard = () => {
         </div>
       </section>
 
-      <section className="px-6 lg:px-24 pb-20">
-        <h2 className="text-3xl font-extrabold text-slate-900 mb-10 tracking-tight">
-          Explore Categories
-        </h2>
+      {/* Categories Section */}
+      <section className="px-6 lg:px-24 pb-24">
+        <div className="flex items-center gap-4 mb-12">
+            <h2 className="text-3xl font-black text-slate-900 tracking-tight">
+                Browse Categories
+            </h2>
+            <div className="h-px flex-1 bg-slate-200"></div>
+        </div>
         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-6">
-          <CategoryBox icon={<Car size={26} />} label="Automotive" />
-          <CategoryBox icon={<Palette size={26} />} label="Fine Art" />
-          <CategoryBox icon={<Home size={26} />} label="Real Estate" />
-          <CategoryBox icon={<Watch size={26} />} label="Watches" />
-          <CategoryBox icon={<Laptop size={26} />} label="Tech" />
-          <CategoryBox icon={<Gem size={26} />} label="Jewelry" />
+          <CategoryBox icon={<Car size={28} />} label="Automotive" />
+          <CategoryBox icon={<Palette size={28} />} label="Fine Art" />
+          <CategoryBox icon={<Home size={28} />} label="Real Estate" />
+          <CategoryBox icon={<Watch size={28} />} label="Watches" />
+          <CategoryBox icon={<Laptop size={28} />} label="Tech" />
+          <CategoryBox icon={<Gem size={28} />} label="Jewelry" />
         </div>
       </section>
     </div>
@@ -178,11 +185,11 @@ const UserDashboard = () => {
 };
 
 const CategoryBox = ({ icon, label }) => (
-  <div className="bg-white border border-slate-200 p-8 rounded-[2rem] flex flex-col items-center gap-4 hover:border-blue-500 hover:shadow-xl hover:shadow-blue-500/5 transition-all cursor-pointer group">
-    <div className="text-slate-400 group-hover:text-blue-600 group-hover:scale-110 transition-all duration-300">
+  <div className="bg-white border border-slate-200 p-10 rounded-[2.5rem] flex flex-col items-center gap-5 hover:border-blue-500 hover:shadow-2xl hover:shadow-blue-500/10 transition-all cursor-pointer group hover:-translate-y-2 duration-300">
+    <div className="text-slate-300 group-hover:text-blue-600 transition-all duration-300">
       {icon}
     </div>
-    <span className="text-[11px] font-bold text-slate-500 group-hover:text-slate-900 uppercase tracking-tighter transition-colors">
+    <span className="text-[11px] font-black text-slate-400 group-hover:text-slate-900 uppercase tracking-widest transition-colors">
       {label}
     </span>
   </div>
