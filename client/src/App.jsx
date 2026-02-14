@@ -7,6 +7,7 @@ import Login from './pages/auth/Login'
 import Landing from './pages/landing/Landing'
 import UserDashboard from './pages/dashboard/user/UserDashboard'
 import SellerDashboard from './pages/dashboard/seller/SellerDashboard'
+import List from './pages/dashboard/seller/List'
 
 function App() {
   const [count, setCount] = useState(0)
@@ -21,6 +22,7 @@ function App() {
           <Route path='/login' element={<Login/>} />
           <Route path='/user-dashboard' element={<UserDashboard/>} />
           <Route path='/seller-dashboard' element={<SellerDashboard/>} />
+          <Route path='/inventory' element={<List/>} />
         </Routes>
       </Router>
     </>
