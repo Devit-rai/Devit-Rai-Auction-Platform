@@ -49,22 +49,11 @@ export const auctionCron = (io) => {
 
         /* Live Countdown */
         if (auction.status === "Live") {
-          const remainingMs =
-            new Date(auction.endTime).getTime() - now.getTime();
-
-          if (remainingMs > 0) {
-            const minutes = Math.floor(remainingMs / 60000);
-            const seconds = Math.floor((remainingMs % 60000) / 1000);
-
-            console.log(
-              `Auction ${auction._id} Time Left: ${minutes}m ${seconds}s`,
-            );
-
             io.to(auction._id.toString()).emit("auctionCountdown", {
               auctionId: auction._id,
               endTime: auction.endTime,
             });
-          }
+          
         }
 
         /* Save Realtime update */

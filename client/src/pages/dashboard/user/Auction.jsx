@@ -45,7 +45,6 @@ const Auction = () => {
     <div className="min-h-screen bg-slate-50 font-sans text-slate-900">
         {/* Navigation Bar  */}
       <nav className="flex items-center justify-between px-6 lg:px-24 py-4 bg-white border-b border-slate-200 sticky top-0 z-50 shadow-sm">
-        {/* Left: Branding - Added cursor-pointer */}
         <div
           className="flex items-center gap-2 cursor-pointer group"
           onClick={() => navigate("/user-dashboard")}
@@ -58,7 +57,6 @@ const Auction = () => {
           </span>
         </div>
 
-        {/* Center: Navigation Links - Ensured all are buttons/Links with pointer cursor */}
         <div className="hidden lg:flex items-center gap-8 text-sm font-semibold text-slate-500">
           <Link
             to="/user-dashboard"
@@ -80,7 +78,6 @@ const Auction = () => {
           </button>
         </div>
 
-        {/* Right: Search & Profile Section */}
         <div className="flex items-center gap-4">
           <div className="relative hidden sm:flex items-center">
             <Search className="absolute left-4 text-slate-400" size={18} />
@@ -103,12 +100,12 @@ const Auction = () => {
             </span>
           </div>
 
-          {/* Profile Icon - Added cursor-pointer */}
+          {/* Profile Icon */}
           <div className="w-10 h-10 rounded-full bg-slate-100 border border-slate-200 flex items-center justify-center text-slate-600 shadow-sm cursor-pointer hover:bg-slate-200 transition-colors">
             <User size={20} />
           </div>
 
-          {/* Logout Button - Already has pointer by default as a button */}
+          {/* Logout Button */}
           <button
             onClick={handleLogout}
             className="w-10 h-10 rounded-xl bg-red-50 border border-red-100 flex items-center justify-center text-red-500 hover:bg-red-500 hover:text-white transition-all duration-300 cursor-pointer"
@@ -186,7 +183,7 @@ const Auction = () => {
 
                   <div className="bg-slate-50 rounded-2xl p-4 mb-6">
                     <p className="text-slate-400 text-[9px] font-black uppercase tracking-widest mb-1">
-                      Highest Bid
+                      Mininum Bid
                     </p>
                     <p className="text-xl font-black text-slate-900">
                       NPR {item.currentBid || item.startingBid}
