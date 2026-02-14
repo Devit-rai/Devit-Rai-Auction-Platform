@@ -8,6 +8,7 @@ import Landing from './pages/landing/Landing'
 import UserDashboard from './pages/dashboard/user/UserDashboard'
 import SellerDashboard from './pages/dashboard/seller/SellerDashboard'
 import List from './pages/dashboard/seller/List'
+import Auction from './pages/dashboard/user/Auction'
 
 function App() {
   const [count, setCount] = useState(0)
@@ -23,6 +24,7 @@ function App() {
           <Route path='/user-dashboard' element={<UserDashboard/>} />
           <Route path='/seller-dashboard' element={<SellerDashboard/>} />
           <Route path='/inventory' element={<List/>} />
+          <Route path='/auctions' element={<Auction/>} />
         </Routes>
       </Router>
     </>
