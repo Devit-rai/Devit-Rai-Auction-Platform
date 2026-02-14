@@ -2,8 +2,9 @@ import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import api from "../../../api/axios";
 import { 
-  Gavel, User, Search, Timer, ArrowRight, LogOut, 
-  LayoutDashboard, ShoppingBag, Heart, X 
+  Gavel, User, Search, ArrowRight, LogOut, 
+  LayoutDashboard, ShoppingBag, Heart, X, ChevronDown, 
+  Filter, RotateCcw, PackageSearch 
 } from "lucide-react";
 import { toast } from "react-hot-toast";
 
@@ -13,11 +14,19 @@ const Auction = () => {
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
   
-  // Wishlist States
+  // filter states
+  const [isFilterOpen, setIsFilterOpen] = useState(false);
+  const [categoryFilter, setCategoryFilter] = useState("All");
+  const [statusFilter, setStatusFilter] = useState("Live"); 
+  const [conditionFilter, setConditionFilter] = useState("All");
+  const [minPrice, setMinPrice] = useState(0); // added min price
+  const [maxPrice, setMaxPrice] = useState(2000000); // increased default max
+
+  // wishlist states
   const [wishlist, setWishlist] = useState([]);
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
 
-  // Extracting user data from session
+  // user data extraction
   const userData = JSON.parse(sessionStorage.getItem("user"));
   const userName = userData?.user?.name || userData?.name || "Auction User";
   const rawRole = userData?.role || userData?.user?.role || "BIDDER";
@@ -34,10 +43,7 @@ const Auction = () => {
         api.get("/auctions/all"),
         api.get("/wishlist")
       ]);
-      
-      const items = auctionRes.data.items || auctionRes.data || [];
-      // We keep all "Live" items here
-      setAuctions(items.filter((item) => item.status === "Live"));
+      setAuctions(auctionRes.data.items || auctionRes.data || []);
       setWishlist(wishlistRes.data.wishlist || []);
     } catch (error) {
       console.error("Fetch error:", error);
@@ -47,16 +53,16 @@ const Auction = () => {
     }
   };
 
+  // logic handlers 
   const handleLogout = () => {
     sessionStorage.removeItem("user");
+    toast.success("Logged out successfully");
     navigate("/");
   };
 
   const toggleWishlist = async (e, auctionId) => {
     e.stopPropagation(); 
-    // Check if the item is already in the wishlist
     const isFavorited = wishlist.some(fav => fav.auctionItem._id === auctionId);
-    
     try {
       if (isFavorited) {
         await api.delete(`/wishlist/${auctionId}`);
@@ -69,30 +75,46 @@ const Auction = () => {
         toast.success("Added to favorites");
       }
     } catch (error) {
-      toast.error(error.response?.data?.message || "Action failed");
+      toast.error("Action failed");
     }
   };
 
-  // Filter ONLY by search term, keeping favorited items in the list
-  const filteredAuctions = auctions.filter((item) =>
-    item.title.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  const resetFilters = () => {
+    setCategoryFilter("All");
+    setStatusFilter("All");
+    setConditionFilter("All");
+    setMinPrice(0);
+    setMaxPrice(2000000);
+    setSearchTerm("");
+  };
+
+  // filtering logic 
+  const filteredAuctions = auctions.filter((item) => {
+    const matchesSearch = item.title.toLowerCase().includes(searchTerm.toLowerCase());
+    const matchesCategory = categoryFilter === "All" || item.category === categoryFilter;
+    const matchesStatus = statusFilter === "All" || item.status === statusFilter;
+    const matchesCondition = conditionFilter === "All" || item.condition === conditionFilter;
+    
+    const price = item.currentBid || item.startingBid;
+    const matchesPrice = price >= minPrice && price <= maxPrice;
+
+    return matchesSearch && matchesCategory && matchesStatus && matchesCondition && matchesPrice;
+  });
+
+  const categories = ["All", ...new Set(auctions.map(a => a.category))];
 
   return (
-    <div className="min-h-screen bg-slate-50 font-sans text-slate-900 relative overflow-x-hidden">
+    <div className="min-h-screen bg-slate-50 font-sans text-slate-900 relative">
       
-      {/* --- FAVORITES SIDEBAR --- */}
+      {/* favorites sidebar */}
       <div className={`fixed top-0 right-0 h-full w-80 bg-white shadow-2xl z-[100] transition-transform duration-500 ease-in-out border-l border-slate-200 ${isSidebarOpen ? "translate-x-0" : "translate-x-full"}`}>
         <div className="p-6 flex flex-col h-full">
           <div className="flex items-center justify-between mb-8">
             <h2 className="text-xl font-black text-slate-900 flex items-center gap-2">
               <Heart className="fill-pink-500 text-pink-500" size={20} /> My Favorites
             </h2>
-            <button onClick={() => setIsSidebarOpen(false)} className="p-2 hover:bg-slate-100 rounded-full transition-colors">
-              <X size={20} />
-            </button>
+            <button onClick={() => setIsSidebarOpen(false)} className="p-2 hover:bg-slate-100 rounded-full transition-colors"><X size={20} /></button>
           </div>
-
           <div className="flex-1 overflow-y-auto space-y-4 pr-1">
             {wishlist.length === 0 ? (
               <div className="text-center py-20">
@@ -117,12 +139,9 @@ const Auction = () => {
           </div>
         </div>
       </div>
+      {isSidebarOpen && <div className="fixed inset-0 bg-slate-900/10 backdrop-blur-sm z-[95]" onClick={() => setIsSidebarOpen(false)} />}
 
-      {isSidebarOpen && (
-        <div className="fixed inset-0 bg-slate-900/10 backdrop-blur-sm z-[95]" onClick={() => setIsSidebarOpen(false)} />
-      )}
-
-      {/* --- NAVIGATION BAR --- */}
+      {/* navigation bar */}
       <nav className="flex items-center justify-between px-6 lg:px-24 py-4 bg-white border-b border-slate-200 sticky top-0 z-50 shadow-sm">
         <div className="flex items-center gap-2 cursor-pointer group" onClick={() => navigate("/user-dashboard")}>
           <div className="w-10 h-10 bg-blue-600 rounded-xl flex items-center justify-center shadow-lg shadow-blue-200 group-hover:rotate-12 transition-transform">
@@ -149,13 +168,13 @@ const Auction = () => {
               type="text"
               placeholder="Search items..."
               className="bg-slate-100 border-none rounded-2xl py-2.5 pl-11 pr-4 w-48 lg:w-64 outline-none focus:ring-2 focus:ring-blue-500/20 transition-all text-sm font-bold"
+              value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
             />
           </div>
 
           <div className="h-8 w-[1px] bg-slate-200 mx-2 hidden sm:block" />
 
-          {/* Favourites Heart Button */}
           <button 
             onClick={() => setIsSidebarOpen(true)}
             className="w-10 h-10 rounded-xl bg-slate-50 border border-slate-100 flex items-center justify-center text-slate-400 hover:bg-pink-50 hover:text-pink-500 transition-all relative"
@@ -184,81 +203,147 @@ const Auction = () => {
       </nav>
 
       <main className="px-6 lg:px-24 py-12">
-        <div className="flex flex-col md:flex-row md:items-end justify-between mb-10 gap-4">
+        {/* title & filter toggle */}
+        <div className="flex flex-col md:flex-row md:items-center justify-between mb-8 gap-4">
           <div>
             <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-blue-50 text-blue-600 text-[10px] font-black uppercase tracking-widest border border-blue-100 mb-4">
               <span className="w-2 h-2 bg-blue-600 rounded-full animate-pulse" /> Live Now
             </div>
             <h1 className="text-4xl font-black tracking-tight text-slate-900">Current Listings</h1>
-            <p className="text-slate-500 font-medium mt-1">Real-time bidding on premium assets.</p>
+            <p className="text-slate-500 font-medium mt-1">Showing {filteredAuctions.length} matching items.</p>
           </div>
-          <div className="text-sm font-bold text-slate-400 bg-white px-4 py-2 rounded-xl border border-slate-200">
-            Showing {filteredAuctions.length} Active Items
+          
+          <button 
+            onClick={() => setIsFilterOpen(!isFilterOpen)}
+            className={`flex items-center gap-2 px-6 py-3 rounded-2xl font-bold text-sm transition-all border ${isFilterOpen ? 'bg-blue-600 text-white border-blue-600 shadow-lg shadow-blue-200' : 'bg-white text-slate-700 border-slate-200 hover:bg-slate-50'}`}
+          >
+            <Filter size={18} />
+            {isFilterOpen ? 'Hide Filters' : 'Advanced Filters'}
+            <ChevronDown size={16} className={`transition-transform duration-300 ${isFilterOpen ? 'rotate-180' : ''}`} />
+          </button>
+        </div>
+
+        {/* collapsible filter container */}
+        <div className={`overflow-hidden transition-all duration-500 ease-in-out ${isFilterOpen ? 'max-h-[600px] mb-10 opacity-100' : 'max-h-0 opacity-0'}`}>
+          <div className="bg-white p-8 rounded-[2.5rem] border border-slate-200 shadow-sm grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
+            
+            <div className="space-y-3">
+              <label className="text-[11px] font-black uppercase text-slate-400">Category</label>
+              <select value={categoryFilter} onChange={(e) => setCategoryFilter(e.target.value)} className="w-full bg-slate-50 border-none rounded-xl py-3 px-4 text-sm font-bold text-slate-700 outline-none ring-1 ring-slate-100 focus:ring-2 focus:ring-blue-500/20">
+                {categories.map(c => <option key={c} value={c}>{c}</option>)}
+              </select>
+            </div>
+
+            <div className="space-y-3">
+              <label className="text-[11px] font-black uppercase text-slate-400">Auction Status</label>
+              <div className="flex gap-2">
+                {["Live", "Upcoming", "All"].map(status => (
+                  <button 
+                    key={status} 
+                    onClick={() => setStatusFilter(status)}
+                    className={`flex-1 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-wider transition-all border ${statusFilter === status ? 'bg-slate-900 text-white border-slate-900' : 'bg-white text-slate-500 border-slate-200 hover:border-slate-300'}`}
+                  >
+                    {status}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            <div className="space-y-3">
+              <label className="text-[11px] font-black uppercase text-slate-400">Condition</label>
+              <select value={conditionFilter} onChange={(e) => setConditionFilter(e.target.value)} className="w-full bg-slate-50 border-none rounded-xl py-3 px-4 text-sm font-bold text-slate-700 outline-none ring-1 ring-slate-100">
+                <option value="All">Any Condition</option>
+                <option value="New">Brand New</option>
+                <option value="Used">Pre-owned</option>
+                <option value="Refurbished">Refurbished</option>
+              </select>
+            </div>
+
+            {/* updated price filter section */}
+            <div className="space-y-6">
+              <div className="space-y-3">
+                <div className="flex justify-between items-center">
+                  <label className="text-[11px] font-black uppercase text-slate-400">Min Price (NPR)</label>
+                  <span className="text-xs font-black text-blue-600">{minPrice.toLocaleString()}</span>
+                </div>
+                <input type="range" min="0" max="1000000" step="5000" value={minPrice} onChange={(e) => setMinPrice(Number(e.target.value))} className="w-full h-1.5 bg-slate-100 rounded-lg appearance-none cursor-pointer accent-blue-600 mt-2" />
+              </div>
+
+              <div className="space-y-3">
+                <div className="flex justify-between items-center">
+                  <label className="text-[11px] font-black uppercase text-slate-400">Max Price (NPR)</label>
+                  <span className="text-xs font-black text-blue-600">{maxPrice.toLocaleString()}</span>
+                </div>
+                <input type="range" min="1000" max="2000000" step="10000" value={maxPrice} onChange={(e) => setMaxPrice(Number(e.target.value))} className="w-full h-1.5 bg-slate-100 rounded-lg appearance-none cursor-pointer accent-blue-600 mt-2" />
+                <button onClick={resetFilters} className="flex items-center gap-1.5 text-[10px] font-black uppercase text-red-500 mt-4 hover:opacity-70 transition-opacity"><RotateCcw size={12}/> Reset All Filters</button>
+              </div>
+            </div>
+
           </div>
         </div>
 
+        {/* auction listings */}
         {loading ? (
           <div className="flex flex-col items-center justify-center py-32">
             <div className="h-16 w-16 border-4 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
             <p className="mt-6 text-slate-400 font-black text-xs uppercase tracking-[0.2em]">Syncing Market Data</p>
           </div>
-        ) : (
+        ) : filteredAuctions.length > 0 ? (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8">
-            {filteredAuctions.map((item) => {
-              // CHECK: Is this specific item in the wishlist?
-              const isFav = wishlist.some(fav => fav.auctionItem._id === item._id);
+            {filteredAuctions.map((item) => (
+              <div key={item._id} className="bg-white rounded-[2.5rem] border border-slate-200 overflow-hidden group hover:border-blue-200 hover:shadow-2xl transition-all duration-500 relative">
+                
+                <button 
+                  onClick={(e) => toggleWishlist(e, item._id)}
+                  className="absolute top-4 right-4 z-10 w-9 h-9 bg-white/90 backdrop-blur-md rounded-xl flex items-center justify-center shadow-sm border border-white/50 hover:scale-110 transition-transform"
+                >
+                  <Heart size={18} className={wishlist.some(fav => fav.auctionItem._id === item._id) ? "fill-pink-500 text-pink-500" : "text-slate-400"} />
+                </button>
 
-              return (
-                <div key={item._id} className="bg-white rounded-[2.5rem] border border-slate-200 overflow-hidden group hover:border-blue-200 hover:shadow-2xl transition-all duration-500 relative">
-                  
-                  {/* Heart Toggle - Dynamically active if isFav is true */}
-                  <button 
-                    onClick={(e) => toggleWishlist(e, item._id)}
-                    className="absolute top-4 right-4 z-10 w-9 h-9 bg-white/90 backdrop-blur-md rounded-xl flex items-center justify-center shadow-sm border border-white/50 hover:scale-110 transition-transform"
-                  >
-                    <Heart 
-                      size={18} 
-                      className={isFav ? "fill-pink-500 text-pink-500" : "text-slate-400"} 
-                    />
-                  </button>
-
-                  <div className="h-56 relative overflow-hidden">
-                    <img src={item.image?.url} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-1000" alt={item.title} />
-                    <div className="absolute top-4 left-4 bg-white/90 backdrop-blur-md px-3 py-1.5 rounded-2xl flex items-center gap-2 border border-white/50 shadow-sm">
-                      <div className="w-1.5 h-1.5 bg-green-500 rounded-full animate-pulse"></div>
-                      <span className="text-[10px] font-black uppercase tracking-widest text-slate-700">Live</span>
-                    </div>
-                  </div>
-
-                  <div className="p-7">
-                    <div className="flex justify-between items-center mb-3">
-                      <span className="px-3 py-1 bg-slate-100 rounded-lg text-[10px] font-bold text-slate-500 uppercase tracking-wider">{item.category}</span>
-                      <div className="flex items-center gap-1.5 text-orange-500">
-                        <Timer size={14} />
-                        <span className="text-[10px] font-black uppercase">Active</span>
-                      </div>
-                    </div>
-                    
-                    <h3 className="text-lg font-bold text-slate-800 mb-5 group-hover:text-blue-600 transition-colors truncate">{item.title}</h3>
-
-                    <div className="bg-slate-50 rounded-2xl p-4 mb-6 border border-slate-100 text-center">
-                      <p className="text-slate-400 text-[10px] font-black uppercase tracking-widest mb-1">Current Bid</p>
-                      <div className="flex items-baseline justify-center gap-1">
-                        <span className="text-xs font-bold text-slate-400">NPR</span>
-                        <span className="text-2xl font-black text-slate-900 tracking-tight">{item.currentBid || item.startingBid}</span>
-                      </div>
-                    </div>
-
-                    <button
-                      onClick={() => navigate(`/auction/${item._id}`)}
-                      className="w-full bg-slate-900 hover:bg-blue-600 text-white font-bold py-4 rounded-2xl flex items-center justify-center gap-2 transition-all group/btn shadow-xl shadow-slate-200 hover:shadow-blue-200"
-                    >
-                      View details <ArrowRight size={18} className="group-hover/btn:translate-x-1 transition-transform" />
-                    </button>
+                <div className="h-56 relative overflow-hidden">
+                  <img src={item.image?.url} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-1000" alt={item.title} />
+                  <div className="absolute top-4 left-4 bg-white/90 backdrop-blur-md px-3 py-1.5 rounded-2xl flex items-center gap-2 border border-white/50 shadow-sm">
+                    <div className={`w-1.5 h-1.5 rounded-full ${item.status === 'Live' ? 'bg-green-500 animate-pulse' : 'bg-slate-400'}`}></div>
+                    <span className="text-[10px] font-black uppercase tracking-widest text-slate-700">{item.status}</span>
                   </div>
                 </div>
-              );
-            })}
+
+                <div className="p-7">
+                  <div className="flex justify-between items-center mb-3">
+                    <span className="px-3 py-1 bg-slate-100 rounded-lg text-[10px] font-bold text-slate-500 uppercase tracking-wider">{item.category}</span>
+                    <div className="flex items-center gap-1.5 text-orange-500">
+                      <span className="text-[10px] font-black uppercase tracking-widest">{item.condition || 'Active'}</span>
+                    </div>
+                  </div>
+                  
+                  <h3 className="text-lg font-bold text-slate-800 mb-5 group-hover:text-blue-600 transition-colors truncate">{item.title}</h3>
+
+                  <div className="bg-slate-50 rounded-2xl p-4 mb-6 border border-slate-100 text-center">
+                    <p className="text-slate-400 text-[10px] font-black uppercase tracking-widest mb-1">Current Bid</p>
+                    <div className="flex items-baseline justify-center gap-1">
+                      <span className="text-xs font-bold text-slate-400">NPR</span>
+                      <span className="text-2xl font-black text-slate-900 tracking-tight">{(item.currentBid || item.startingBid).toLocaleString()}</span>
+                    </div>
+                  </div>
+
+                  <button
+                    onClick={() => navigate(`/auction/${item._id}`)}
+                    className="w-full bg-slate-900 hover:bg-blue-600 text-white font-bold py-4 rounded-2xl flex items-center justify-center gap-2 transition-all group/btn shadow-xl shadow-slate-200"
+                  >
+                    View details <ArrowRight size={18} className="group-hover/btn:translate-x-1 transition-transform" />
+                  </button>
+                </div>
+              </div>
+            ))}
+          </div>
+        ) : (
+          <div className="flex flex-col items-center justify-center py-40 bg-white rounded-[3rem] border border-dashed border-slate-200">
+            <PackageSearch size={48} className="text-slate-200 mb-4" />
+            <h3 className="text-xl font-black text-slate-900">No items match your criteria</h3>
+            <p className="text-slate-500 font-medium mt-2">Try clearing filters or checking other categories.</p>
+            <button onClick={resetFilters} className="mt-8 text-sm font-black text-blue-600 hover:underline flex items-center gap-2">
+               <RotateCcw size={14} /> Clear All Filters
+            </button>
           </div>
         )}
       </main>
