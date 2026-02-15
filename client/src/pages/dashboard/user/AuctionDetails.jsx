@@ -17,11 +17,9 @@ const CountdownTimer = ({ endTime, onEnd }) => {
         if (onEnd) onEnd();
         return;
       }
-
       const hours = Math.floor(difference / (1000 * 60 * 60));
       const minutes = Math.floor((difference / 1000 / 60) % 60);
       const seconds = Math.floor((difference / 1000) % 60);
-
       const pad = (num) => String(num).padStart(2, '0');
       setTimeLeft(`${pad(hours)}h ${pad(minutes)}m ${pad(seconds)}s`);
     };
@@ -31,10 +29,9 @@ const CountdownTimer = ({ endTime, onEnd }) => {
     return () => clearInterval(timer);
   }, [endTime, onEnd]);
 
-  return <span className="font-mono tracking-tighter">{timeLeft}</span>;
+  return <span className="font-mono font-bold">{timeLeft}</span>;
 };
 
-// --- Main Component ---
 const AuctionDetails = () => {
   const { id } = useParams();
   const navigate = useNavigate();
@@ -45,7 +42,6 @@ const AuctionDetails = () => {
   const [status, setStatus] = useState({ type: "", msg: "" });
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  // Initial Data Fetch
   const fetchDetails = useCallback(async () => {
     try {
       const { data } = await api.get(`/auctions/${id}`);
@@ -61,17 +57,13 @@ const AuctionDetails = () => {
     fetchDetails();
   }, [fetchDetails]);
 
-  // Real-time Socket Setup
   useEffect(() => {
     const socket = io(SOCKET_URL);
     socket.emit("joinAuction", id);
 
-    // Update bids list instantly when someone else bids
     socket.on("bidUpdate", (data) => {
       setItem((prev) => {
         if (!prev) return prev;
-        
-        // Remove old bid from this user if it exists, then add the new one
         const otherBids = prev.bids.filter(b => b.userId !== data.newBid.userId);
         return {
           ...prev,
@@ -81,7 +73,6 @@ const AuctionDetails = () => {
       });
     });
 
-    // Update status instantly from Cron Job
     socket.on("auctionStatusUpdated", (data) => {
       if (data.auctionId === id) {
         setItem(prev => prev ? { ...prev, status: data.status } : prev);
@@ -98,14 +89,14 @@ const AuctionDetails = () => {
     const currentPrice = Number(item?.currentBid || item?.startingBid);
 
     if (amount <= currentPrice) {
-      return setStatus({ type: "error", msg: `Bid must exceed NPR ${currentPrice.toLocaleString()}` });
+      return setStatus({ type: "error", msg: `Must exceed NPR ${currentPrice.toLocaleString()}` });
     }
 
     try {
       setIsSubmitting(true);
       await api.post(`/bids/${id}`, { amount });
       setBidAmount("");
-      setStatus({ type: "success", msg: "Bid placed successfully!" });
+      setStatus({ type: "success", msg: "Bid placed!" });
     } catch (err) {
       setStatus({ type: "error", msg: err.response?.data?.message || "Error" });
     } finally {
@@ -114,119 +105,124 @@ const AuctionDetails = () => {
   };
 
   if (loading) return (
-    <div className="min-h-screen flex flex-col items-center justify-center bg-slate-50">
-      <Loader2 className="h-10 w-10 text-blue-600 animate-spin" />
+    <div className="min-h-screen flex items-center justify-center bg-slate-50">
+      <Loader2 className="h-8 w-8 text-blue-600 animate-spin" />
     </div>
   );
 
-  if (!item) return <div className="p-20 text-center">Auction not found.</div>;
+  if (!item) return <div className="p-10 text-center font-medium">Auction not found.</div>;
 
   const sortedBids = [...(item.bids || [])].sort((a, b) => b.amount - a.amount);
 
   return (
-    <div className="min-h-screen bg-slate-50 pb-20">
-      <nav className="px-6 lg:px-24 py-8">
-        <button onClick={() => navigate(-1)} className="flex items-center gap-2 text-slate-500 hover:text-blue-600 font-bold">
-          <ArrowLeft size={20} /> Back to Listings
+    <div className="min-h-screen bg-slate-50 pb-12">
+      {/* Reduced padding in Nav */}
+      <nav className="px-6 lg:px-16 py-5">
+        <button onClick={() => navigate(-1)} className="flex items-center gap-2 text-sm text-slate-500 hover:text-blue-600 font-semibold transition-colors">
+          <ArrowLeft size={18} /> Back to Listings
         </button>
       </nav>
 
-      <main className="px-6 lg:px-24 grid grid-cols-1 lg:grid-cols-12 gap-12">
+      {/* Main Grid: Reduced gap */}
+      <main className="px-6 lg:px-16 grid grid-cols-1 lg:grid-cols-12 gap-8">
+        
         {/* LEFT COLUMN */}
-        <div className="lg:col-span-7 space-y-6">
-          <div className="bg-white rounded-[2.5rem] p-4 border border-slate-200 shadow-sm overflow-hidden">
-            <img src={item.image?.url} alt={item.title} className="w-full h-[500px] object-cover rounded-[2rem]" />
+        <div className="lg:col-span-7 space-y-5">
+          <div className="bg-white rounded-2xl p-3 border border-slate-200 shadow-sm">
+            <img 
+              src={item.image?.url} 
+              alt={item.title} 
+              className="w-full h-[400px] object-cover rounded-xl" 
+            />
           </div>
 
-          <div className="bg-white rounded-[2rem] p-8 border border-slate-200 shadow-sm">
-            <h3 className="font-bold text-lg text-slate-800 mb-6 flex items-center gap-2">
-              <History size={20} className="text-blue-600" /> Live Bidding History
+          <div className="bg-white rounded-2xl p-6 border border-slate-200 shadow-sm">
+            <h3 className="font-bold text-base text-slate-800 mb-4 flex items-center gap-2">
+              <History size={18} className="text-blue-600" /> Bidding History
             </h3>
-            <div className="space-y-3">
+            <div className="space-y-2">
               {sortedBids.length > 0 ? (
-                sortedBids.map((bid, idx) => (
-                  <div key={idx} className={`flex justify-between items-center p-5 rounded-2xl border transition-all ${idx === 0 ? "bg-blue-50 border-blue-200 shadow-sm" : "bg-slate-50 border-slate-100"}`}>
-                    <div className="flex items-center gap-4">
-                      <div className={`w-10 h-10 rounded-full flex items-center justify-center font-bold ${idx === 0 ? "bg-blue-600 text-white" : "bg-slate-200 text-slate-500"}`}>
-                        {idx === 0 ? <Trophy size={18} /> : idx + 1}
+                sortedBids.slice(0, 5).map((bid, idx) => ( // Showing top 5 to keep it compact
+                  <div key={idx} className={`flex justify-between items-center p-3 rounded-xl border ${idx === 0 ? "bg-blue-50/50 border-blue-100" : "bg-white border-slate-100"}`}>
+                    <div className="flex items-center gap-3">
+                      <div className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold ${idx === 0 ? "bg-blue-600 text-white" : "bg-slate-100 text-slate-500"}`}>
+                        {idx === 0 ? <Trophy size={14} /> : idx + 1}
                       </div>
                       <div>
-                        <p className="font-bold text-slate-800 leading-none">{bid.userName}</p>
-                        {idx === 0 && <span className="text-[10px] font-black uppercase text-blue-600">Current Leader</span>}
+                        <p className="font-semibold text-sm text-slate-800">{bid.userName}</p>
+                        {idx === 0 && <span className="text-[9px] font-bold uppercase text-blue-600">Highest Bidder</span>}
                       </div>
                     </div>
-                    <p className={`text-lg font-black ${idx === 0 ? "text-blue-600" : "text-slate-600"}`}>
+                    <p className={`text-sm font-bold ${idx === 0 ? "text-blue-600" : "text-slate-600"}`}>
                       NPR {Number(bid.amount).toLocaleString()}
                     </p>
                   </div>
                 ))
               ) : (
-                <div className="text-center py-10 text-slate-400 border border-dashed rounded-2xl">No bids yet. Start the auction!</div>
+                <div className="text-center py-6 text-sm text-slate-400 border border-dashed rounded-xl">No bids yet.</div>
               )}
             </div>
           </div>
         </div>
 
         {/* RIGHT COLUMN */}
-        <div className="lg:col-span-5 space-y-8">
-          <div>
-            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-blue-50 text-blue-600 text-[10px] font-black uppercase mb-4 tracking-widest">
+        <div className="lg:col-span-5 space-y-6">
+          <section>
+            <div className="inline-flex items-center gap-2 px-2.5 py-0.5 rounded-full bg-slate-200 text-slate-700 text-[9px] font-bold uppercase mb-3 tracking-wider">
               {item.category} • {item.condition}
             </div>
-            <h1 className="text-4xl font-black text-slate-900 mb-4 leading-tight">{item.title}</h1>
-            <p className="text-slate-500 font-medium leading-relaxed">{item.description}</p>
-          </div>
+            <h1 className="text-2xl font-bold text-slate-900 mb-2 leading-tight">{item.title}</h1>
+            <p className="text-sm text-slate-500 font-normal leading-relaxed line-clamp-3">{item.description}</p>
+          </section>
 
-          <div className="grid grid-cols-2 gap-4">
-            <div className="bg-white p-6 rounded-3xl border border-slate-200 shadow-sm">
-              <p className="text-slate-400 text-[10px] font-black mb-1 uppercase tracking-wider">Current Price</p>
-              <p className="text-2xl font-black text-blue-600">NPR {Number(item.currentBid || item.startingBid).toLocaleString()}</p>
+          <div className="grid grid-cols-2 gap-3">
+            <div className="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm">
+              <p className="text-slate-400 text-[10px] font-bold mb-1 uppercase tracking-tight">Current Price</p>
+              <p className="text-lg font-bold text-blue-600">NPR {Number(item.currentBid || item.startingBid).toLocaleString()}</p>
             </div>
-            <div className="bg-white p-6 rounded-3xl border border-slate-200 shadow-sm">
-              <p className="text-slate-400 text-[10px] font-black mb-1 uppercase tracking-wider">
-                {item.status === "Live" ? "Time Left" : "Auction Status"}
-              </p>
-              <div className={`flex items-center gap-2 text-xl font-black ${item.status === 'Live' ? 'text-orange-600' : 'text-slate-600'}`}>
-                <Timer size={20} className={item.status === "Live" ? "animate-pulse" : ""} />
+            <div className="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm">
+              <p className="text-slate-400 text-[10px] font-bold mb-1 uppercase tracking-tight">Time Left</p>
+              <div className={`flex items-center gap-1.5 text-lg font-bold ${item.status === 'Live' ? 'text-orange-600' : 'text-slate-600'}`}>
+                <Timer size={16} />
                 {item.status === "Live" ? (
                   <CountdownTimer endTime={item.endTime} onEnd={() => setItem(prev => ({ ...prev, status: "Ended" }))} />
                 ) : (
-                  item.status
+                  <span className="text-sm uppercase">{item.status}</span>
                 )}
               </div>
             </div>
           </div>
 
           {item.status === "Live" ? (
-            <div className="bg-slate-900 rounded-[2.5rem] p-8 text-white shadow-2xl shadow-blue-900/20">
-              <h3 className="text-xl font-bold mb-6 flex items-center gap-2"><Gavel /> Quick Bid</h3>
-              <form onSubmit={handlePlaceBid} className="space-y-4">
+            <div className="bg-slate-900 rounded-2xl p-6 text-white shadow-xl">
+              <h3 className="text-base font-bold mb-4 flex items-center gap-2"><Gavel size={18} /> Quick Bid</h3>
+              <form onSubmit={handlePlaceBid} className="space-y-3">
                 <div className="relative">
-                  <span className="absolute left-6 top-1/2 -translate-y-1/2 text-slate-500 font-bold">NPR</span>
+                  <span className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-500 text-xs font-bold">NPR</span>
                   <input
                     type="number"
                     required
                     value={bidAmount}
                     onChange={(e) => setBidAmount(e.target.value)}
                     placeholder={`Min. ${(Number(item.currentBid || item.startingBid) + 1).toLocaleString()}`}
-                    className="w-full bg-slate-800 border-2 border-transparent focus:border-blue-500 rounded-2xl py-5 pl-16 pr-6 font-bold outline-none transition-all"
+                    className="w-full bg-slate-800 border border-slate-700 focus:border-blue-500 rounded-xl py-3 pl-12 pr-4 text-sm font-bold outline-none transition-all"
                   />
                 </div>
-                {status.msg && <div className={`p-4 rounded-xl text-sm font-bold ${status.type === "error" ? "bg-red-500/10 text-red-400" : "bg-green-500/10 text-green-400"}`}>{status.msg}</div>}
-                <button disabled={isSubmitting} type="submit" className="w-full bg-blue-600 hover:bg-blue-500 text-white font-black py-5 rounded-2xl flex items-center justify-center transition-all transform active:scale-[0.98]">
-                  {isSubmitting ? <Loader2 className="animate-spin" /> : "PLACE BID NOW"}
+                {status.msg && <div className={`p-3 rounded-lg text-xs font-semibold ${status.type === "error" ? "bg-red-500/10 text-red-400" : "bg-green-500/10 text-green-400"}`}>{status.msg}</div>}
+                <button disabled={isSubmitting} type="submit" className="w-full bg-blue-600 hover:bg-blue-500 text-white font-bold py-3.5 rounded-xl text-sm transition-all active:scale-[0.98]">
+                  {isSubmitting ? <Loader2 className="animate-spin mx-auto h-5 w-5" /> : "PLACE BID NOW"}
                 </button>
               </form>
             </div>
           ) : (
-            <div className="bg-slate-200 rounded-[2.5rem] p-10 text-center">
-              <p className="text-slate-500 font-black uppercase tracking-widest">
+            <div className="bg-slate-100 rounded-2xl p-6 text-center border border-slate-200">
+              <p className="text-slate-500 text-xs font-bold uppercase tracking-widest">
                 {item.status === "Ended" ? "Auction Closed" : "Coming Soon"}
               </p>
               {item.status === "Ended" && item.winner && (
-                <div className="mt-4 p-4 bg-white rounded-2xl border border-slate-300">
-                  <p className="text-sm text-slate-500">Winner</p>
-                  <p className="text-xl font-black text-blue-600">{item.winner.userName}</p>
+                <div className="mt-3 p-3 bg-white rounded-xl border border-slate-200">
+                  <p className="text-[10px] text-slate-400 uppercase font-bold">Winner</p>
+                  <p className="text-lg font-bold text-blue-600">{item.winner.userName}</p>
                 </div>
               )}
             </div>
