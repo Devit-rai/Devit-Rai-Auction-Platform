@@ -172,9 +172,8 @@ const UserDashboard = () => {
             <div className="h-px flex-1 bg-slate-200"></div>
         </div>
         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-6">
-          <CategoryBox icon={<Car size={28} />} label="Automotive" />
+          <CategoryBox icon={<Car size={28} />} label="Vehicles" />
           <CategoryBox icon={<Palette size={28} />} label="Fine Art" />
-          <CategoryBox icon={<Home size={28} />} label="Real Estate" />
           <CategoryBox icon={<Watch size={28} />} label="Watches" />
           <CategoryBox icon={<Laptop size={28} />} label="Tech" />
           <CategoryBox icon={<Gem size={28} />} label="Jewelry" />

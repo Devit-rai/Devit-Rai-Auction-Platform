@@ -7,6 +7,7 @@ import Login from './pages/auth/Login'
 import Landing from './pages/landing/Landing'
 import UserDashboard from './pages/dashboard/user/UserDashboard'
 import SellerDashboard from './pages/dashboard/seller/SellerDashboard'
+import BidHistory from './pages/dashboard/seller/BidHistory'
 import List from './pages/dashboard/seller/List'
 import Auction from './pages/dashboard/user/Auction'
 import AuctionDetails from './pages/dashboard/user/AuctionDetails'
@@ -24,6 +25,7 @@ function App() {
           <Route path='/login' element={<Login/>} />
           <Route path='/user-dashboard' element={<UserDashboard/>} />
           <Route path='/seller-dashboard' element={<SellerDashboard/>} />
+          <Route path='/bid-history' element={<BidHistory/>} />
           <Route path='/inventory' element={<List/>} />
           <Route path='/auctions' element={<Auction/>} />
           <Route path='/auction/:id' element={<AuctionDetails/>} />
