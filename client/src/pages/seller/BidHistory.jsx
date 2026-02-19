@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { ArrowLeft, User } from "lucide-react";
 import { useNavigate } from "react-router-dom";
-import api from "../../../api/axios";
+import api from "../../api/axios";
 
 const BidHistory = () => {
   const navigate = useNavigate();

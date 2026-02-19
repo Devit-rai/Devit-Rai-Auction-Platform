@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import api from "../../../api/axios";
+import api from "../../api/axios";
 import io from "socket.io-client";
 import { Timer, ArrowLeft, History, Loader2, Trophy, Gavel } from "lucide-react";
 
