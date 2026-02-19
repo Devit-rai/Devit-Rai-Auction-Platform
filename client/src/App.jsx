@@ -5,12 +5,13 @@ import Signup from './pages/auth/Signup'
 import Verify from './pages/auth/Verify'
 import Login from './pages/auth/Login'
 import Landing from './pages/landing/Landing'
-import UserDashboard from './pages/dashboard/user/UserDashboard'
-import SellerDashboard from './pages/dashboard/seller/SellerDashboard'
-import BidHistory from './pages/dashboard/seller/BidHistory'
-import List from './pages/dashboard/seller/List'
-import Auction from './pages/dashboard/user/Auction'
-import AuctionDetails from './pages/dashboard/user/AuctionDetails'
+import UserDashboard from './pages/user/UserDashboard'
+import SellerDashboard from './pages/seller/SellerDashboard'
+import AdminDashboard from './pages/admin/AdminDashboard'
+import BidHistory from './pages/seller/BidHistory'
+import List from './pages/seller/List'
+import Auction from './pages/user/Auction'
+import AuctionDetails from './pages/user/AuctionDetails'
 
 function App() {
   const [count, setCount] = useState(0)
@@ -25,6 +26,7 @@ function App() {
           <Route path='/login' element={<Login/>} />
           <Route path='/user-dashboard' element={<UserDashboard/>} />
           <Route path='/seller-dashboard' element={<SellerDashboard/>} />
+          <Route path='/admin-dashboard' element={<AdminDashboard/>} />
           <Route path='/bid-history' element={<BidHistory/>} />
           <Route path='/inventory' element={<List/>} />
           <Route path='/auctions' element={<Auction/>} />
