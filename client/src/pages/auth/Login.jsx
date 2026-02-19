@@ -51,10 +51,15 @@ const Login = () => {
     try {
       const res = await api.post("/auth/login", formData);
       const userData = res.data;
+
       sessionStorage.setItem("user", JSON.stringify(userData));
+
+      // Extract role using your helper function
       const role = getRole(userData);
 
-      if (role === "SELLER") {
+      if (role === "ADMIN") {
+        navigate("/admin-dashboard");
+      } else if (role === "SELLER") {
         navigate("/seller-dashboard");
       } else {
         navigate("/user-dashboard");
@@ -87,7 +92,10 @@ const Login = () => {
                 Email Address
               </label>
               <div className="relative">
-                <Mail className="absolute left-4 top-3.5 text-slate-400" size={18} />
+                <Mail
+                  className="absolute left-4 top-3.5 text-slate-400"
+                  size={18}
+                />
                 <input
                   name="email"
                   type="email"
@@ -104,7 +112,10 @@ const Login = () => {
                 Password
               </label>
               <div className="relative">
-                <Lock className="absolute left-4 top-3.5 text-slate-400" size={18} />
+                <Lock
+                  className="absolute left-4 top-3.5 text-slate-400"
+                  size={18}
+                />
                 <input
                   name="password"
                   type={showPass ? "text" : "password"}
@@ -135,13 +146,21 @@ const Login = () => {
               className="w-full py-4 bg-slate-900 hover:bg-black text-white rounded-2xl font-bold text-lg flex items-center justify-center gap-2 group mt-2 transition-all"
             >
               {loading ? <Loader2 className="animate-spin" /> : "Sign In"}
-              {!loading && <ArrowRight size={20} className="group-hover:translate-x-1 transition-transform" />}
+              {!loading && (
+                <ArrowRight
+                  size={20}
+                  className="group-hover:translate-x-1 transition-transform"
+                />
+              )}
             </button>
           </form>
 
           <p className="mt-8 text-center text-sm text-slate-500">
             Don't have an account?{" "}
-            <Link to="/signup" className="text-blue-600 font-bold hover:underline">
+            <Link
+              to="/signup"
+              className="text-blue-600 font-bold hover:underline"
+            >
               Create one
             </Link>
           </p>
