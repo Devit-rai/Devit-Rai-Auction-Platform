@@ -7,7 +7,7 @@ import {
   LogOut,
   MoreHorizontal,
   User,
-  Trophy,
+  Shield,
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import api from "../../api/axios";
@@ -34,30 +34,44 @@ const getTimeRemaining = (endTime) => {
   return days > 0 ? `${days}d ${hours}h` : `${hours}h remaining`;
 };
 
-const StatCard = ({ label, value, subValue, icon: Icon, color = "blue" }) => (
-  <div className="bg-white p-6 rounded-3xl border border-slate-200 shadow-sm flex flex-col gap-2 relative overflow-hidden">
-    <div className="flex justify-between items-start">
-      <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">
-        {label}
-      </span>
+// Stat Card
+const StatCard = ({ label, value, icon: Icon, color = "indigo" }) => {
+  const colorMap = {
+    indigo: "bg-indigo-50 text-indigo-600",
+    emerald: "bg-emerald-50 text-emerald-600",
+    amber: "bg-amber-50 text-amber-600",
+  };
+  return (
+    <div className="bg-white rounded-2xl border border-slate-100 p-5 flex items-center gap-4 shadow-sm">
       {Icon && (
-        <Icon
-          size={16}
-          className={color === "blue" ? "text-blue-500" : "text-indigo-500"}
-        />
+        <div className={`w-11 h-11 rounded-xl flex items-center justify-center flex-shrink-0 ${colorMap[color]}`}>
+          <Icon size={18} />
+        </div>
       )}
+      <div>
+        <p className="text-2xl font-bold text-slate-800">{value}</p>
+        <p className="text-xs text-slate-400 font-medium mt-0.5">{label}</p>
+      </div>
     </div>
-    <div className="flex flex-col">
-      <span className="text-2xl font-black text-slate-900">{value}</span>
-      {subValue && (
-        <span className="text-[10px] text-slate-400 font-bold truncate">
-          {subValue}
-        </span>
-      )}
-    </div>
-  </div>
+  );
+};
+
+// Nav Item
+const NavItem = ({ icon: Icon, label, active, onClick }) => (
+  <button
+    onClick={onClick}
+    className={`w-full flex items-center gap-2.5 px-3 py-2.5 rounded-xl text-sm font-medium transition ${
+      active
+        ? "bg-indigo-50 text-indigo-700"
+        : "text-slate-500 hover:bg-slate-50 hover:text-slate-800"
+    }`}
+  >
+    <Icon size={16} className={active ? "text-indigo-600" : ""} />
+    {label}
+  </button>
 );
 
+// Main
 const SellerDashboard = () => {
   const navigate = useNavigate();
   const [auctions, setAuctions] = useState([]);
@@ -71,7 +85,7 @@ const SellerDashboard = () => {
         setLoading(true);
         const { data } = await api.get("/auctions/all");
         const myItems = (data.items || []).filter(
-          (item) => item.createdBy === user?._id,
+          (item) => item.createdBy === user?._id
         );
         setAuctions(myItems);
       } catch (error) {
@@ -86,7 +100,7 @@ const SellerDashboard = () => {
   const stats = useMemo(() => {
     const totalRevenue = auctions.reduce(
       (acc, curr) => acc + (Number(curr.currentBid) || 0),
-      0,
+      0
     );
     const liveItems = auctions.filter((a) => a.status === "Live");
 
@@ -97,15 +111,8 @@ const SellerDashboard = () => {
         bidderName: bid.bidderName || bid.userName || "User",
         bidAmount: Number(bid.bidAmount || bid.amount || 0),
         bidTime: bid.createdAt || item.createdAt,
-      })),
+      }))
     );
-
-    const highestBidObj =
-      allBids.length > 0
-        ? allBids.reduce((prev, current) =>
-            prev.bidAmount > current.bidAmount ? prev : current,
-          )
-        : null;
 
     const days = [...Array(7)]
       .map((_, i) => dayjs().subtract(i, "day").format("ddd"))
@@ -120,220 +127,247 @@ const SellerDashboard = () => {
       totalRevenue,
       liveCount: liveItems.length,
       activeListings: liveItems,
-      highestBid: highestBidObj,
       recentBids: [...allBids]
         .sort((a, b) => new Date(b.bidTime) - new Date(a.bidTime))
-        .slice(0, 4),
+        .slice(0, 5),
       chartData: days.map((d) => ({ name: d, count: chartMap[d] })),
     };
   }, [auctions]);
 
   return (
-    <div className="min-h-screen bg-[#F9FAFB] flex font-sans text-slate-900">
-      <aside className="w-64 bg-white border-r border-slate-200 hidden lg:flex flex-col fixed h-full z-50">
-        <div className="p-6 flex items-center gap-3 border-b border-slate-50">
-          <div className="w-10 h-10 bg-blue-600 rounded-xl flex items-center justify-center shadow-lg shadow-blue-200">
-            <Gavel size={20} className="text-white" />
+    <div className="min-h-screen bg-[#F7F8FA] flex font-sans text-slate-900">
+
+      {/* ── Sidebar ── */}
+      <aside className="w-60 bg-white border-r border-slate-100 hidden lg:flex flex-col fixed h-full z-50">
+        {/* Logo */}
+        <div className="flex items-center gap-2.5 px-6 py-5 border-b border-slate-100">
+          <div className="w-8 h-8 bg-indigo-600 rounded-lg flex items-center justify-center text-white">
+            <Gavel size={16} />
           </div>
-          <h1 className="text-xl font-black tracking-tight">AuctionPro</h1>
+          <span className="font-bold text-indigo-900 text-lg tracking-tight">Auction</span>
         </div>
-        <nav className="flex-1 p-4 space-y-2 mt-4">
-          <button
+
+        {/* Seller badge */}
+        <div className="mx-4 mt-4 mb-2 bg-indigo-50 rounded-xl px-3 py-2.5 flex items-center gap-2">
+          <Shield size={14} className="text-indigo-600" />
+          <div>
+            <p className="text-[11px] text-indigo-400 font-medium">Logged in as</p>
+            <p className="text-xs font-bold text-indigo-700 truncate">
+              {user?.name || user?.email || "Seller"}
+            </p>
+          </div>
+        </div>
+
+        {/* Nav */}
+        <nav className="flex-1 px-3 pt-3 space-y-1">
+          <NavItem
+            icon={LayoutDashboard}
+            label="Dashboard"
+            active={true}
             onClick={() => navigate("/seller-dashboard")}
-            className="w-full flex items-center gap-3 px-4 py-3 rounded-2xl font-bold bg-blue-600 text-white shadow-md text-sm transition-all"
-          >
-            <LayoutDashboard size={18} /> Dashboard
-          </button>
-          <button
+          />
+          <NavItem
+            icon={List}
+            label="My Inventory"
+            active={false}
             onClick={() => navigate("/inventory")}
-            className="w-full flex items-center gap-3 px-4 py-3 rounded-2xl font-bold text-slate-500 hover:bg-slate-50 text-sm transition-all"
-          >
-            <List size={18} /> My Inventory
-          </button>
+          />
         </nav>
-        <div className="p-4 border-t border-slate-50">
+
+        {/* Logout */}
+        <div className="p-4 border-t border-slate-100">
           <button
-            onClick={() => {
-              sessionStorage.clear();
-              navigate("/login");
-            }}
-            className="w-full flex items-center gap-3 px-4 py-3 text-slate-500 hover:text-red-500 hover:bg-red-50 rounded-2xl text-sm font-bold transition-all"
+            onClick={() => { sessionStorage.clear(); navigate("/login"); }}
+            className="w-full flex items-center gap-2 text-slate-500 hover:text-red-500 text-sm font-medium px-3 py-2 rounded-lg hover:bg-red-50 transition"
           >
-            <LogOut size={18} /> <span>Sign Out</span>
+            <LogOut size={15} /> Sign Out
           </button>
         </div>
       </aside>
 
-      <main className="flex-1 lg:ml-64 p-8">
-        <header className="mb-10">
-          <h2 className="text-3xl font-black text-slate-800 tracking-tight">
-            Dashboard
-          </h2>
-          <p className="text-slate-400 text-xs font-black uppercase tracking-widest mt-1">
-            Real-time Performance
-          </p>
-        </header>
+      {/* ── Main Content ── */}
+      <main className="flex-1 lg:ml-60 p-8 min-h-screen">
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-10">
+        {/* Page Header */}
+        <div className="mb-8">
+          <h1 className="text-2xl font-bold text-slate-800">Dashboard</h1>
+          <p className="text-sm text-slate-400 mt-0.5">Real-time performance overview</p>
+        </div>
+
+        {/* Stat Cards */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
           <StatCard
             label="Total Revenue"
             value={`NPR ${(stats.totalRevenue || 0).toLocaleString()}`}
             icon={TrendingUp}
+            color="indigo"
           />
           <StatCard
             label="Live Now"
             value={stats.liveCount || 0}
             icon={Gavel}
+            color="emerald"
           />
           <StatCard
             label="Total Items"
             value={auctions.length || 0}
             icon={List}
+            color="amber"
           />
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 mb-10">
-          <div className="lg:col-span-2 bg-white p-8 rounded-[2rem] border border-slate-200 shadow-sm min-w-0">
-            <div className="h-[320px] w-full">
+        {/* Chart + Recent Bids */}
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
+
+          {/* Area Chart */}
+          <div className="lg:col-span-2 bg-white rounded-2xl border border-slate-100 shadow-sm p-6">
+            <p className="text-sm font-semibold text-slate-700 mb-1">Listings This Week</p>
+            <p className="text-xs text-slate-400 mb-5">Items listed per day over the last 7 days</p>
+            <div className="h-[260px] w-full">
               <ResponsiveContainer width="100%" height="100%">
                 <AreaChart data={stats.chartData}>
                   <defs>
                     <linearGradient id="colorCount" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="5%" stopColor="#2563eb" stopOpacity={0.1} />
-                      <stop offset="95%" stopColor="#2563eb" stopOpacity={0} />
+                      <stop offset="5%" stopColor="#6366f1" stopOpacity={0.12} />
+                      <stop offset="95%" stopColor="#6366f1" stopOpacity={0} />
                     </linearGradient>
                   </defs>
-                  <CartesianGrid
-                    strokeDasharray="3 3"
-                    vertical={false}
-                    stroke="#f1f5f9"
-                  />
+                  <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
                   <XAxis
                     dataKey="name"
                     axisLine={false}
                     tickLine={false}
-                    tick={{ fontSize: 12, fill: "#94a3b8" }}
+                    tick={{ fontSize: 12, fill: "#94a3b8", fontWeight: 500 }}
                   />
                   <YAxis
                     axisLine={false}
                     tickLine={false}
                     tick={{ fontSize: 12, fill: "#94a3b8" }}
+                    allowDecimals={false}
                   />
                   <Tooltip
                     contentStyle={{
-                      borderRadius: "16px",
-                      border: "none",
-                      boxShadow: "0 10px 15px -3px rgba(0,0,0,0.1)",
+                      borderRadius: "12px",
+                      border: "1px solid #e2e8f0",
+                      boxShadow: "0 4px 12px rgba(0,0,0,0.06)",
+                      fontSize: "12px",
                     }}
                   />
                   <Area
                     type="monotone"
                     dataKey="count"
-                    stroke="#2563eb"
-                    strokeWidth={4}
+                    stroke="#6366f1"
+                    strokeWidth={2.5}
                     fillOpacity={1}
                     fill="url(#colorCount)"
+                    dot={{ r: 3, fill: "#6366f1", strokeWidth: 0 }}
+                    activeDot={{ r: 5, fill: "#6366f1" }}
                   />
                 </AreaChart>
               </ResponsiveContainer>
             </div>
           </div>
 
-          <div className="bg-white p-8 rounded-[2rem] border border-slate-200 shadow-sm flex flex-col h-[400px]">
-            <h3 className="text-slate-800 font-black text-xl mb-6">
-              Latest Bids
-            </h3>
-            <div className="flex-1 space-y-6 overflow-y-auto pr-2 custom-scrollbar">
+          {/* Recent Bids */}
+          <div className="bg-white rounded-2xl border border-slate-100 shadow-sm p-6 flex flex-col">
+            <p className="text-sm font-semibold text-slate-700 mb-4">Latest Bids</p>
+            <div className="flex-1 space-y-3 overflow-y-auto">
+              {stats.recentBids.length === 0 && (
+                <p className="text-xs text-slate-400 text-center py-6">No bids yet.</p>
+              )}
               {stats.recentBids.map((bid, i) => (
-                <div key={i} className="flex items-center justify-between">
-                  <div className="flex items-center gap-3 truncate">
-                    <div className="w-10 h-10 bg-slate-50 border border-slate-100 rounded-xl flex items-center justify-center shrink-0">
-                      <User size={18} className="text-slate-400" />
-                    </div>
-                    <div className="truncate">
-                      <p className="text-slate-800 font-bold text-sm truncate">
-                        {bid.bidderName}
-                      </p>
-                      <p className="text-slate-400 text-[9px] font-black uppercase truncate">
-                        {bid.itemTitle}
-                      </p>
-                    </div>
+                <div key={i} className="flex items-center gap-3">
+                  <div className="w-8 h-8 bg-indigo-50 rounded-full flex items-center justify-center flex-shrink-0">
+                    <User size={14} className="text-indigo-400" />
                   </div>
-                  <div className="text-right shrink-0">
-                    <p className="text-blue-600 font-black text-sm">
-                      Rs. {(bid.bidAmount || 0).toLocaleString()}
-                    </p>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-semibold text-slate-700 truncate">{bid.bidderName}</p>
+                    <p className="text-[11px] text-slate-400 truncate">{bid.itemTitle}</p>
                   </div>
+                  <p className="text-sm font-bold text-indigo-600 flex-shrink-0">
+                    NPR {(bid.bidAmount || 0).toLocaleString()}
+                  </p>
                 </div>
               ))}
             </div>
             <button
               onClick={() => navigate("/bid-history")}
-              className="mt-6 w-full py-4 bg-slate-900 text-white text-xs font-black uppercase rounded-2xl"
+              className="mt-5 w-full py-2.5 bg-slate-900 text-white text-xs font-semibold rounded-xl hover:bg-slate-800 transition"
             >
-              History
+              View Full History
             </button>
           </div>
         </div>
 
-        <div className="bg-white rounded-[2rem] overflow-hidden shadow-sm border border-slate-200">
-          <div className="p-8 border-b border-slate-50 flex justify-between items-center">
-            <h3 className="text-slate-800 font-black text-xl">Active Items</h3>
+        {/* Active Listings Table */}
+        <div className="bg-white rounded-2xl border border-slate-100 shadow-sm overflow-hidden">
+          <div className="px-6 py-4 border-b border-slate-100 flex justify-between items-center">
+            <div>
+              <p className="text-sm font-semibold text-slate-700">Active Listings</p>
+              <p className="text-xs text-slate-400 mt-0.5">{stats.activeListings.length} items currently live</p>
+            </div>
           </div>
+
           <div className="overflow-x-auto">
-            <table className="w-full text-left">
+            <table className="w-full text-sm">
               <thead>
-                <tr className="bg-slate-50/50 text-slate-400 text-[10px] font-black uppercase tracking-widest">
-                  <th className="px-8 py-5">Item</th>
-                  <th className="px-8 py-5">Current High</th>
-                  <th className="px-8 py-5 text-center">Bids</th>
-                  <th className="px-8 py-5">Time Left</th>
-                  <th className="px-8 py-5 text-right">Action</th>
+                <tr className="border-b border-slate-100 text-left">
+                  <th className="px-6 py-3.5 text-xs font-semibold text-slate-400 uppercase tracking-wide">Item</th>
+                  <th className="px-6 py-3.5 text-xs font-semibold text-slate-400 uppercase tracking-wide">Current Bid</th>
+                  <th className="px-6 py-3.5 text-xs font-semibold text-slate-400 uppercase tracking-wide text-center">Bids</th>
+                  <th className="px-6 py-3.5 text-xs font-semibold text-slate-400 uppercase tracking-wide">Time Left</th>
+                  <th className="px-6 py-3.5 text-xs font-semibold text-slate-400 uppercase tracking-wide text-right">Actions</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-50">
+              <tbody>
+                {loading && (
+                  <tr>
+                    <td colSpan={5} className="text-center text-slate-400 py-10 text-sm">
+                      Loading...
+                    </td>
+                  </tr>
+                )}
+                {!loading && stats.activeListings.length === 0 && (
+                  <tr>
+                    <td colSpan={5} className="text-center text-slate-400 py-10 text-sm">
+                      No active listings.
+                    </td>
+                  </tr>
+                )}
                 {!loading &&
                   stats.activeListings.map((item) => (
                     <tr
                       key={item._id}
-                      className="hover:bg-slate-50/50 transition-colors"
+                      className="border-b border-slate-50 hover:bg-slate-50/60 transition"
                     >
-                      <td className="px-8 py-5 flex items-center gap-4">
-                        <img
-                          src={item.image?.url}
-                          className="w-12 h-12 rounded-xl object-cover"
-                          alt=""
-                        />
-                        <div>
-                          <p className="font-bold text-slate-800">
-                            {item.title}
-                          </p>
-                          <p className="text-[10px] text-slate-400 font-black uppercase">
-                            {item.category}
-                          </p>
+                      <td className="px-6 py-4">
+                        <div className="flex items-center gap-3">
+                          <img
+                            src={item.image?.url}
+                            className="w-10 h-10 rounded-xl object-cover flex-shrink-0 bg-slate-100"
+                            alt={item.title}
+                          />
+                          <div>
+                            <p className="font-semibold text-slate-800">{item.title}</p>
+                            <p className="text-xs text-slate-400">{item.category}</p>
+                          </div>
                         </div>
                       </td>
-                      <td className="px-8 py-5 font-black text-sm text-blue-600">
-                        NPR{" "}
-                        {(
-                          item.currentBid ||
-                          item.startingBid ||
-                          0
-                        ).toLocaleString()}
+                      <td className="px-6 py-4 font-semibold text-indigo-600">
+                        NPR {(item.currentBid || item.startingBid || 0).toLocaleString()}
                       </td>
-                      <td className="px-8 py-5 text-center">
-                        <span className="bg-blue-50 text-blue-600 px-3 py-1 rounded-lg text-xs font-black">
+                      <td className="px-6 py-4 text-center">
+                        <span className="bg-indigo-50 text-indigo-600 px-2.5 py-1 rounded-full text-xs font-semibold border border-indigo-100">
                           {item.bids?.length || 0}
                         </span>
                       </td>
-                      <td className="px-8 py-5 font-bold text-sm text-slate-600">
+                      <td className="px-6 py-4 text-slate-500 text-sm">
                         {getTimeRemaining(item.endTime)}
                       </td>
-                      <td className="px-8 py-5 text-right">
-                        <MoreHorizontal
-                          size={20}
-                          className="text-slate-300 ml-auto"
-                        />
+                      <td className="px-6 py-4 text-right">
+                        <button className="p-1.5 rounded-lg text-slate-400 hover:bg-slate-100 transition">
+                          <MoreHorizontal size={16} />
+                        </button>
                       </td>
                     </tr>
                   ))}
