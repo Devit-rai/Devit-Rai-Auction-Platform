@@ -30,11 +30,17 @@ connectCloudinary();
 
 const server = http.createServer(app);
 
-// --- Create Socket.IO before routes ---
-const io = new Server(server, { cors: { origin: "*" } });
-app.set("io", io); // make io accessible in controllers
+// Create Socket.IO before routes
+const io = new Server(server, {
+  cors: {
+    origin: "http://localhost:5173",
+    credentials: true,
+    methods: ["GET", "POST"],
+  },
+});
+app.set("io", io);
 
-// --- Routes ---
+// Routes
 app.use("/api/auth", authRoutes);
 app.use("/api/auctions",auth, auctionRoutes);
 app.use("/api/bids",auth,  bidRoutes(io));
@@ -44,15 +50,25 @@ app.get("/", (_req, res) => {
   res.json({ name: process.env.NAME, version: process.env.VERSION, message: "Server is running" });
 });
 
-// --- Socket connection ---
+//Socket connection
 io.on("connection", (socket) => {
   console.log("User connected:", socket.id);
+
+  socket.on("joinAuction", (auctionId) => {
+    socket.join(auctionId);
+    console.log(`Socket ${socket.id} joined auction: ${auctionId}`);
+  });
+
+  socket.on("leaveAuction", (auctionId) => {
+    socket.leave(auctionId);
+  });
+
   socket.on("disconnect", () => {
     console.log("User disconnected:", socket.id);
   });
 });
 
-// --- Start auction cron ---
+// Start auction cron
 auctionCron(io);
 
 const PORT = process.env.PORT || 8000;
