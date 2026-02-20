@@ -1,11 +1,10 @@
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect, useCallback, useRef } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import api from "../../api/axios";
-import io from "socket.io-client";
+import { socket } from "../../api/socket";
 import { Timer, ArrowLeft, History, Loader2, Trophy, Gavel } from "lucide-react";
 
-const SOCKET_URL = "http://localhost:8000";
-
+/* ─── Countdown Timer ─────────────────────────────────── */
 const CountdownTimer = ({ endTime, onEnd }) => {
   const [timeLeft, setTimeLeft] = useState("");
 
@@ -20,10 +19,9 @@ const CountdownTimer = ({ endTime, onEnd }) => {
       const hours = Math.floor(difference / (1000 * 60 * 60));
       const minutes = Math.floor((difference / 1000 / 60) % 60);
       const seconds = Math.floor((difference / 1000) % 60);
-      const pad = (num) => String(num).padStart(2, '0');
+      const pad = (num) => String(num).padStart(2, "0");
       setTimeLeft(`${pad(hours)}h ${pad(minutes)}m ${pad(seconds)}s`);
     };
-
     const timer = setInterval(calculateTime, 1000);
     calculateTime();
     return () => clearInterval(timer);
@@ -32,6 +30,7 @@ const CountdownTimer = ({ endTime, onEnd }) => {
   return <span className="font-mono font-bold">{timeLeft}</span>;
 };
 
+/* ─── Main Component ──────────────────────────────────── */
 const AuctionDetails = () => {
   const { id } = useParams();
   const navigate = useNavigate();
@@ -42,11 +41,15 @@ const AuctionDetails = () => {
   const [status, setStatus] = useState({ type: "", msg: "" });
   const [isSubmitting, setIsSubmitting] = useState(false);
 
+  const idRef = useRef(id);
+  useEffect(() => { idRef.current = id; }, [id]);
+
+  /* ── Fetch Auction Details ── */
   const fetchDetails = useCallback(async () => {
     try {
       const { data } = await api.get(`/auctions/${id}`);
       setItem(data.auctionItem);
-    } catch (err) {
+    } catch {
       setStatus({ type: "error", msg: "Failed to load auction." });
     } finally {
       setLoading(false);
@@ -57,39 +60,76 @@ const AuctionDetails = () => {
     fetchDetails();
   }, [fetchDetails]);
 
+  /* ── Socket — real-time updates ── */
   useEffect(() => {
-    const socket = io(SOCKET_URL);
-    socket.emit("joinAuction", id);
+    if (!id) return;
 
-    socket.on("bidUpdate", (data) => {
+    const joinRoom = () => socket.emit("joinAuction", id);
+    joinRoom();
+    socket.on("connect", joinRoom);
+
+    const handleBidUpdate = (data) => {
+      if (String(data.auctionId) !== String(idRef.current)) return;
+
       setItem((prev) => {
         if (!prev) return prev;
-        const otherBids = prev.bids.filter(b => b.userId !== data.newBid.userId);
+
+        const incoming = data.newBid; // { userId, userName, amount, timestamp }
+
+        const existingIndex = prev.bids.findIndex(
+          (b) => String(b.userId) === String(incoming.userId)
+        );
+
+        let updatedBids;
+        if (existingIndex !== -1) {
+          // Replace full bid object so userName is always correct
+          updatedBids = prev.bids.map((b, i) =>
+            i === existingIndex ? { ...incoming } : b
+          );
+        } else {
+          updatedBids = [{ ...incoming }, ...prev.bids];
+        }
+
+        updatedBids.sort((a, b) => b.amount - a.amount);
+
         return {
           ...prev,
           currentBid: data.currentBid,
-          bids: [data.newBid, ...otherBids]
+          bids: updatedBids,
         };
       });
-    });
+    };
 
-    socket.on("auctionStatusUpdated", (data) => {
-      if (data.auctionId === id) {
-        setItem(prev => prev ? { ...prev, status: data.status } : prev);
+    const handleStatusUpdate = (data) => {
+      if (String(data.auctionId) === String(idRef.current)) {
+        setItem((prev) => (prev ? { ...prev, status: data.status } : prev));
       }
-    });
+    };
 
-    return () => socket.disconnect();
+    socket.on("bidUpdate", handleBidUpdate);
+    socket.on("auctionStatusUpdated", handleStatusUpdate);
+
+    return () => {
+      socket.off("connect", joinRoom);
+      socket.off("bidUpdate", handleBidUpdate);
+      socket.off("auctionStatusUpdated", handleStatusUpdate);
+      socket.emit("leaveAuction", id);
+    };
   }, [id]);
 
+  /* ── Place Bid — NO optimistic UI, socket delivers the real update ── */
   const handlePlaceBid = async (e) => {
     e.preventDefault();
     setStatus({ type: "", msg: "" });
+
     const amount = parseFloat(bidAmount);
     const currentPrice = Number(item?.currentBid || item?.startingBid);
 
-    if (amount <= currentPrice) {
-      return setStatus({ type: "error", msg: `Must exceed NPR ${currentPrice.toLocaleString()}` });
+    if (isNaN(amount) || amount <= currentPrice) {
+      return setStatus({
+        type: "error",
+        msg: `Bid must exceed NPR ${currentPrice.toLocaleString()}`,
+      });
     }
 
     try {
@@ -97,134 +137,197 @@ const AuctionDetails = () => {
       await api.post(`/bids/${id}`, { amount });
       setBidAmount("");
       setStatus({ type: "success", msg: "Bid placed!" });
+      // ✅ Socket bidUpdate fires from backend and updates the list with real name
     } catch (err) {
-      setStatus({ type: "error", msg: err.response?.data?.message || "Error" });
+      setStatus({
+        type: "error",
+        msg: err.response?.data?.message || "Failed to place bid.",
+      });
     } finally {
       setIsSubmitting(false);
     }
   };
 
-  if (loading) return (
-    <div className="min-h-screen flex items-center justify-center bg-slate-50">
-      <Loader2 className="h-8 w-8 text-blue-600 animate-spin" />
-    </div>
-  );
+  /* ── Render ── */
+  if (loading)
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-slate-50">
+        <Loader2 className="h-8 w-8 text-blue-600 animate-spin" />
+      </div>
+    );
 
-  if (!item) return <div className="p-10 text-center font-medium">Auction not found.</div>;
+  if (!item)
+    return (
+      <div className="p-10 text-center font-medium text-slate-500">
+        Auction not found.
+      </div>
+    );
 
   const sortedBids = [...(item.bids || [])].sort((a, b) => b.amount - a.amount);
 
   return (
     <div className="min-h-screen bg-slate-50 pb-12">
-      {/* Reduced padding in Nav */}
       <nav className="px-6 lg:px-16 py-5">
-        <button onClick={() => navigate(-1)} className="flex items-center gap-2 text-sm text-slate-500 hover:text-blue-600 font-semibold transition-colors">
+        <button
+          onClick={() => navigate(-1)}
+          className="flex items-center gap-2 text-sm text-slate-500 hover:text-blue-600 font-semibold transition-colors"
+        >
           <ArrowLeft size={18} /> Back to Listings
         </button>
       </nav>
 
-      {/* Main Grid: Reduced gap */}
       <main className="px-6 lg:px-16 grid grid-cols-1 lg:grid-cols-12 gap-8">
-        
-        {/* LEFT COLUMN */}
+        {/* ── LEFT ── */}
         <div className="lg:col-span-7 space-y-5">
-          <div className="bg-white rounded-2xl p-3 border border-slate-200 shadow-sm">
-            <img 
-              src={item.image?.url} 
-              alt={item.title} 
-              className="w-full h-[400px] object-cover rounded-xl" 
+          <div className="bg-white rounded-2xl p-3 border shadow-sm">
+            <img
+              src={item.image?.url}
+              alt={item.title}
+              className="w-full h-[400px] object-cover rounded-xl"
             />
           </div>
 
-          <div className="bg-white rounded-2xl p-6 border border-slate-200 shadow-sm">
-            <h3 className="font-bold text-base text-slate-800 mb-4 flex items-center gap-2">
-              <History size={18} className="text-blue-600" /> Bidding History
+          {/* Bidding History */}
+          <div className="bg-white rounded-2xl p-6 border shadow-sm">
+            <h3 className="font-bold mb-4 flex items-center gap-2">
+              <History size={18} className="text-blue-600" />
+              Bidding History
             </h3>
+
             <div className="space-y-2">
               {sortedBids.length > 0 ? (
-                sortedBids.slice(0, 5).map((bid, idx) => ( // Showing top 5 to keep it compact
-                  <div key={idx} className={`flex justify-between items-center p-3 rounded-xl border ${idx === 0 ? "bg-blue-50/50 border-blue-100" : "bg-white border-slate-100"}`}>
-                    <div className="flex items-center gap-3">
-                      <div className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold ${idx === 0 ? "bg-blue-600 text-white" : "bg-slate-100 text-slate-500"}`}>
-                        {idx === 0 ? <Trophy size={14} /> : idx + 1}
-                      </div>
-                      <div>
-                        <p className="font-semibold text-sm text-slate-800">{bid.userName}</p>
-                        {idx === 0 && <span className="text-[9px] font-bold uppercase text-blue-600">Highest Bidder</span>}
-                      </div>
-                    </div>
-                    <p className={`text-sm font-bold ${idx === 0 ? "text-blue-600" : "text-slate-600"}`}>
+                sortedBids.slice(0, 5).map((bid, idx) => (
+                  <div
+                    key={`${bid.userId}-${bid.amount}`}
+                    className={`flex justify-between items-center p-3 rounded-xl border transition-all ${
+                      idx === 0
+                        ? "bg-blue-50 border-blue-200"
+                        : "bg-slate-50 border-transparent"
+                    }`}
+                  >
+                    {/* ✅ Always real name from DB — no "You (pending...)" ever */}
+                    <p className="font-semibold">{bid.userName}</p>
+                    <p className="font-bold text-blue-600">
                       NPR {Number(bid.amount).toLocaleString()}
                     </p>
                   </div>
                 ))
               ) : (
-                <div className="text-center py-6 text-sm text-slate-400 border border-dashed rounded-xl">No bids yet.</div>
+                <div className="text-center py-6 text-sm text-slate-400 border rounded-xl">
+                  No bids yet. Be the first!
+                </div>
               )}
             </div>
           </div>
         </div>
 
-        {/* RIGHT COLUMN */}
+        {/* ── RIGHT ── */}
         <div className="lg:col-span-5 space-y-6">
-          <section>
-            <div className="inline-flex items-center gap-2 px-2.5 py-0.5 rounded-full bg-slate-200 text-slate-700 text-[9px] font-bold uppercase mb-3 tracking-wider">
-              {item.category} • {item.condition}
-            </div>
-            <h1 className="text-2xl font-bold text-slate-900 mb-2 leading-tight">{item.title}</h1>
-            <p className="text-sm text-slate-500 font-normal leading-relaxed line-clamp-3">{item.description}</p>
-          </section>
+          <h1 className="text-2xl font-bold">{item.title}</h1>
 
-          <div className="grid grid-cols-2 gap-3">
-            <div className="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm">
-              <p className="text-slate-400 text-[10px] font-bold mb-1 uppercase tracking-tight">Current Price</p>
-              <p className="text-lg font-bold text-blue-600">NPR {Number(item.currentBid || item.startingBid).toLocaleString()}</p>
-            </div>
-            <div className="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm">
-              <p className="text-slate-400 text-[10px] font-bold mb-1 uppercase tracking-tight">Time Left</p>
-              <div className={`flex items-center gap-1.5 text-lg font-bold ${item.status === 'Live' ? 'text-orange-600' : 'text-slate-600'}`}>
-                <Timer size={16} />
-                {item.status === "Live" ? (
-                  <CountdownTimer endTime={item.endTime} onEnd={() => setItem(prev => ({ ...prev, status: "Ended" }))} />
-                ) : (
-                  <span className="text-sm uppercase">{item.status}</span>
-                )}
-              </div>
-            </div>
+          {/* Current Price */}
+          <div className="bg-white p-4 rounded-2xl border shadow-sm">
+            <p className="text-sm text-slate-400">Current Price</p>
+            <p className="text-2xl font-bold text-blue-600">
+              NPR {Number(item.currentBid || item.startingBid).toLocaleString()}
+            </p>
           </div>
 
-          {item.status === "Live" ? (
-            <div className="bg-slate-900 rounded-2xl p-6 text-white shadow-xl">
-              <h3 className="text-base font-bold mb-4 flex items-center gap-2"><Gavel size={18} /> Quick Bid</h3>
+          {/* Countdown */}
+          {item.endTime && item.status === "Live" && (
+            <div className="bg-white p-4 rounded-2xl border shadow-sm flex items-center gap-2 text-sm text-slate-500">
+              <Timer size={16} className="text-blue-600" />
+              Ends in:{" "}
+              <CountdownTimer
+                endTime={item.endTime}
+                onEnd={() =>
+                  setItem((prev) =>
+                    prev ? { ...prev, status: "Ended" } : prev
+                  )
+                }
+              />
+            </div>
+          )}
+
+          {/* Bid Form */}
+          {item.status === "Live" && (
+            <div className="bg-slate-900 rounded-2xl p-6 text-white">
+              <h3 className="font-bold mb-4 flex items-center gap-2">
+                <Gavel size={18} /> Place Your Bid
+              </h3>
+
               <form onSubmit={handlePlaceBid} className="space-y-3">
-                <div className="relative">
-                  <span className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-500 text-xs font-bold">NPR</span>
+                <div>
+                  <label className="text-xs text-slate-400 mb-1 block">
+                    Amount (min: NPR{" "}
+                    {(
+                      Number(item.currentBid || item.startingBid) + 1
+                    ).toLocaleString()}
+                    )
+                  </label>
                   <input
                     type="number"
                     required
+                    min={Number(item.currentBid || item.startingBid) + 1}
                     value={bidAmount}
                     onChange={(e) => setBidAmount(e.target.value)}
-                    placeholder={`Min. ${(Number(item.currentBid || item.startingBid) + 1).toLocaleString()}`}
-                    className="w-full bg-slate-800 border border-slate-700 focus:border-blue-500 rounded-xl py-3 pl-12 pr-4 text-sm font-bold outline-none transition-all"
+                    placeholder={`> ${Number(
+                      item.currentBid || item.startingBid
+                    ).toLocaleString()}`}
+                    className="w-full bg-slate-800 rounded-xl py-3 px-4 text-sm placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
                   />
                 </div>
-                {status.msg && <div className={`p-3 rounded-lg text-xs font-semibold ${status.type === "error" ? "bg-red-500/10 text-red-400" : "bg-green-500/10 text-green-400"}`}>{status.msg}</div>}
-                <button disabled={isSubmitting} type="submit" className="w-full bg-blue-600 hover:bg-blue-500 text-white font-bold py-3.5 rounded-xl text-sm transition-all active:scale-[0.98]">
-                  {isSubmitting ? <Loader2 className="animate-spin mx-auto h-5 w-5" /> : "PLACE BID NOW"}
+
+                {status.msg && (
+                  <div
+                    className={`text-xs px-3 py-2 rounded-lg ${
+                      status.type === "error"
+                        ? "bg-red-500/20 text-red-300"
+                        : "bg-green-500/20 text-green-300"
+                    }`}
+                  >
+                    {status.msg}
+                  </div>
+                )}
+
+                <button
+                  type="submit"
+                  disabled={isSubmitting}
+                  className="w-full bg-blue-600 hover:bg-blue-500 disabled:opacity-60 disabled:cursor-not-allowed py-3 rounded-xl font-bold transition-colors flex items-center justify-center gap-2"
+                >
+                  {isSubmitting ? (
+                    <>
+                      <Loader2 size={16} className="animate-spin" /> Placing...
+                    </>
+                  ) : (
+                    <>
+                      <Gavel size={16} /> PLACE BID
+                    </>
+                  )}
                 </button>
               </form>
             </div>
-          ) : (
-            <div className="bg-slate-100 rounded-2xl p-6 text-center border border-slate-200">
-              <p className="text-slate-500 text-xs font-bold uppercase tracking-widest">
-                {item.status === "Ended" ? "Auction Closed" : "Coming Soon"}
-              </p>
-              {item.status === "Ended" && item.winner && (
-                <div className="mt-3 p-3 bg-white rounded-xl border border-slate-200">
-                  <p className="text-[10px] text-slate-400 uppercase font-bold">Winner</p>
-                  <p className="text-lg font-bold text-blue-600">{item.winner.userName}</p>
-                </div>
+          )}
+
+          {/* Ended */}
+          {item.status === "Ended" && (
+            <div className="bg-amber-50 border border-amber-200 rounded-2xl p-5 text-center">
+              <Trophy size={28} className="text-amber-500 mx-auto mb-2" />
+              <p className="font-bold text-amber-700">Auction Ended</p>
+              {item.winner && (
+                <p className="text-sm text-amber-600 mt-1">
+                  Won by{" "}
+                  <span className="font-semibold">{item.winner.userName}</span>{" "}
+                  for NPR {Number(item.winner.amount).toLocaleString()}
+                </p>
               )}
+            </div>
+          )}
+
+          {/* Upcoming */}
+          {item.status === "Upcoming" && (
+            <div className="bg-slate-100 border rounded-2xl p-5 text-center text-slate-500 text-sm">
+              This auction hasn't started yet.
             </div>
           )}
         </div>
