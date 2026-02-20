@@ -1,16 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import {
-  Gavel,
-  ShieldCheck,
-  Globe,
-  Headset,
-  UserPlus,
-  Trophy,
-  LogOut,
-  ChevronRight,
-  Heart,
-} from "lucide-react";
+import { Gavel, UserPlus, Trophy, ChevronRight } from "lucide-react";
 
 const Landing = () => {
   const navigate = useNavigate();
@@ -47,8 +37,8 @@ const Landing = () => {
 
   return (
     <div className="min-h-screen bg-[#FDFDFF] text-slate-900 font-sans">
-      {/* --- Navigation --- */}
-      <nav className="flex items-center justify-between px-6 lg:px-24 py-5 bg-white/70 backdrop-blur-md sticky top-0 z-50">
+      {/* Navigation Bar */}
+      <nav className="flex items-center justify-between px-6 lg:px-24 py-5 bg-white/70 backdrop-blur-md sticky top-0 z-50 shadow-sm">
         <div
           className="flex items-center gap-2 cursor-pointer"
           onClick={() => navigate("/")}
@@ -61,26 +51,12 @@ const Landing = () => {
           </span>
         </div>
 
-        <div className="hidden md:flex items-center gap-8 text-sm font-medium text-slate-600">
-          <a href="/" className="text-indigo-600">
-            Home
-          </a>
-          <a href="#auctions" className="hover:text-indigo-600 transition">
-            Auctions
-          </a>
-          <a href="#about" className="hover:text-indigo-600 transition">
-            About
-          </a>
-        </div>
-
-        <div className="flex items-center gap-4">
-          <button
-            onClick={handleAuthAction}
-            className="bg-gradient-to-r from-blue-500 to-indigo-500 text-white px-6 py-2 rounded-full text-sm font-semibold shadow-md hover:opacity-90 transition"
-          >
-            Log In / Sign Up
-          </button>
-        </div>
+        <button
+          onClick={() => navigate("/login")}
+          className="bg-gradient-to-r from-blue-500 to-indigo-500 text-white px-6 py-2 rounded-full text-sm font-semibold shadow-md hover:opacity-90 transition"
+        >
+          Log In/Sign Up
+        </button>
       </nav>
 
       {/* --- Hero Section --- */}
