@@ -61,6 +61,45 @@ const login = async (req, res) => {
   }
 };
 
+const forgotPassword = async (req, res) => {
+  try {
+    const { email } = req.body;
+    const result = await authService.forgotPassword(email);
+
+    res.status(200).json({ success: true, message: result.message });
+  } catch (error) {
+    res
+      .status(error.statusCode || 500)
+      .json({ success: false, message: error.message || "Server error" });
+  }
+};
+
+const resetPassword = async (req, res) => {
+  try {
+    const { email, code, newPassword, confirmPassword } = req.body;
+
+    if (!newPassword || !confirmPassword)
+      return res
+        .status(400)
+        .json({ message: "New Password and Confirm Password are required" });
+
+    if (newPassword !== confirmPassword)
+      return res.status(400).json({ message: "Passwords do not match" });
+
+    const result = await authService.resetPassword(
+      email,
+      code,
+      newPassword
+    );
+
+    res.status(200).json({ success: true, message: result.message });
+  } catch (error) {
+    res
+      .status(error.statusCode || 500)
+      .json({ success: false, message: error.message || "Server error" });
+  }
+};
+
 const logout = async (req, res) => {
   try {
     res.clearCookie("authToken", { httpOnly: true, sameSite: "strict" });
@@ -70,4 +109,4 @@ const logout = async (req, res) => {
   }
 };
 
-export default { signup, verifyEmail, login, logout, resendOtp };
+export default { signup, verifyEmail, login, logout, resendOtp, forgotPassword, resetPassword };

@@ -18,4 +18,10 @@ router.post("/verify-email", authController.verifyEmail);
 // URL: /api/auth/resend-otp
 router.post("/resend-otp", authController.resendOtp);
 
+// URL: /api/auth/forgot-password
+router.post("/forgot-password", authController.forgotPassword);
+
+// URL: /api/auth/reset-password
+router.post("/reset-password", authController.resetPassword);
+
 export default router;
