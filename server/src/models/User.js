@@ -1,5 +1,5 @@
 import mongoose from "mongoose";
-import {ADMIN, USER, SELLER} from "../constants/roles.js";
+import { ADMIN, USER, SELLER } from "../constants/roles.js";
 
 const userSchema = new mongoose.Schema({
   name: {
@@ -33,8 +33,18 @@ const userSchema = new mongoose.Schema({
     type: Boolean,
     default: false,
   },
-  verificationCode: { type: String },
-  verificationCodeExpiryTime: { type: Number },
+  verificationCode: { 
+    type: String 
+  },
+  verificationCodeExpiryTime: { 
+    type: Number 
+  },
+  resetPasswordCode: { 
+    type: String 
+  },
+  resetPasswordExpiryTime: { 
+    type: Number
+  },
   createdAt: {
     type: Date,
     default: Date.now,

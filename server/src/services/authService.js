@@ -112,4 +112,46 @@ const login = async (data) => {
   };
 };
 
-export default { signup, verifyEmail, login, resendOtp };
+// Forgot Password → Send Reset OTP
+const forgotPassword = async (email) => {
+  const user = await User.findOne({ email });
+  if (!user) throw { statusCode: 404, message: "User not found" };
+
+  const resetCode = generateVerificationCode();
+  user.resetPasswordCode = resetCode;
+  user.resetPasswordExpiryTime =
+    Date.now() + OTP_EXPIRY_MINUTES * 60 * 1000;
+
+  await user.save();
+
+  await sendVerificationCode(user.email, resetCode);
+
+  return { message: "Reset password OTP sent to email" };
+};
+
+// Reset Password → Verify OTP & Update Password
+const resetPassword = async (email, code, newPassword) => {
+  const user = await User.findOne({ email });
+  if (!user) throw { statusCode: 404, message: "User not found" };
+
+  if (!user.resetPasswordCode)
+    throw { statusCode: 400, message: "Reset code missing" };
+
+  if (user.resetPasswordExpiryTime < Date.now())
+    throw { statusCode: 400, message: "Reset code expired" };
+
+  if (user.resetPasswordCode.toString().trim() !== code.toString().trim())
+    throw { statusCode: 400, message: "Invalid reset code" };
+
+  const hashedPassword = bcrypt.hashSync(newPassword, 10);
+
+  user.password = hashedPassword;
+  user.resetPasswordCode = null;
+  user.resetPasswordExpiryTime = null;
+
+  await user.save();
+
+  return { message: "Password reset successfully" };
+};
+
+export default { signup, verifyEmail, login, resendOtp, forgotPassword, resetPassword };
