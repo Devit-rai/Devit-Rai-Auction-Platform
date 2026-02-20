@@ -2,9 +2,16 @@ import React, { useState, useEffect, useCallback, useRef } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import api from "../../api/axios";
 import { socket } from "../../api/socket";
-import { Timer, ArrowLeft, History, Loader2, Trophy, Gavel } from "lucide-react";
+import {
+  Timer,
+  ArrowLeft,
+  History,
+  Loader2,
+  Trophy,
+  Gavel,
+} from "lucide-react";
 
-/* ─── Countdown Timer ─────────────────────────────────── */
+/* Countdown Timer */
 const CountdownTimer = ({ endTime, onEnd }) => {
   const [timeLeft, setTimeLeft] = useState("");
 
@@ -30,7 +37,7 @@ const CountdownTimer = ({ endTime, onEnd }) => {
   return <span className="font-mono font-bold">{timeLeft}</span>;
 };
 
-/* ─── Main Component ──────────────────────────────────── */
+/* Main Component */
 const AuctionDetails = () => {
   const { id } = useParams();
   const navigate = useNavigate();
@@ -42,9 +49,11 @@ const AuctionDetails = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const idRef = useRef(id);
-  useEffect(() => { idRef.current = id; }, [id]);
+  useEffect(() => {
+    idRef.current = id;
+  }, [id]);
 
-  /* ── Fetch Auction Details ── */
+  /* Fetch Auction Details */
   const fetchDetails = useCallback(async () => {
     try {
       const { data } = await api.get(`/auctions/${id}`);
@@ -60,7 +69,7 @@ const AuctionDetails = () => {
     fetchDetails();
   }, [fetchDetails]);
 
-  /* ── Socket — real-time updates ── */
+  /* Socket real-time updates */
   useEffect(() => {
     if (!id) return;
 
@@ -77,14 +86,14 @@ const AuctionDetails = () => {
         const incoming = data.newBid; // { userId, userName, amount, timestamp }
 
         const existingIndex = prev.bids.findIndex(
-          (b) => String(b.userId) === String(incoming.userId)
+          (b) => String(b.userId) === String(incoming.userId),
         );
 
         let updatedBids;
         if (existingIndex !== -1) {
           // Replace full bid object so userName is always correct
           updatedBids = prev.bids.map((b, i) =>
-            i === existingIndex ? { ...incoming } : b
+            i === existingIndex ? { ...incoming } : b,
           );
         } else {
           updatedBids = [{ ...incoming }, ...prev.bids];
@@ -117,7 +126,7 @@ const AuctionDetails = () => {
     };
   }, [id]);
 
-  /* ── Place Bid — NO optimistic UI, socket delivers the real update ── */
+  /*  Place Bid */
   const handlePlaceBid = async (e) => {
     e.preventDefault();
     setStatus({ type: "", msg: "" });
@@ -137,7 +146,6 @@ const AuctionDetails = () => {
       await api.post(`/bids/${id}`, { amount });
       setBidAmount("");
       setStatus({ type: "success", msg: "Bid placed!" });
-      // ✅ Socket bidUpdate fires from backend and updates the list with real name
     } catch (err) {
       setStatus({
         type: "error",
@@ -148,7 +156,6 @@ const AuctionDetails = () => {
     }
   };
 
-  /* ── Render ── */
   if (loading)
     return (
       <div className="min-h-screen flex items-center justify-center bg-slate-50">
@@ -177,7 +184,6 @@ const AuctionDetails = () => {
       </nav>
 
       <main className="px-6 lg:px-16 grid grid-cols-1 lg:grid-cols-12 gap-8">
-        {/* ── LEFT ── */}
         <div className="lg:col-span-7 space-y-5">
           <div className="bg-white rounded-2xl p-3 border shadow-sm">
             <img
@@ -221,7 +227,6 @@ const AuctionDetails = () => {
           </div>
         </div>
 
-        {/* ── RIGHT ── */}
         <div className="lg:col-span-5 space-y-6">
           <h1 className="text-2xl font-bold">{item.title}</h1>
 
@@ -242,7 +247,7 @@ const AuctionDetails = () => {
                 endTime={item.endTime}
                 onEnd={() =>
                   setItem((prev) =>
-                    prev ? { ...prev, status: "Ended" } : prev
+                    prev ? { ...prev, status: "Ended" } : prev,
                   )
                 }
               />
@@ -272,7 +277,7 @@ const AuctionDetails = () => {
                     value={bidAmount}
                     onChange={(e) => setBidAmount(e.target.value)}
                     placeholder={`> ${Number(
-                      item.currentBid || item.startingBid
+                      item.currentBid || item.startingBid,
                     ).toLocaleString()}`}
                     className="w-full bg-slate-800 rounded-xl py-3 px-4 text-sm placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
                   />

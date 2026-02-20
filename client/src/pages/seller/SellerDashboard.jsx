@@ -44,7 +44,9 @@ const StatCard = ({ label, value, icon: Icon, color = "indigo" }) => {
   return (
     <div className="bg-white rounded-2xl border border-slate-100 p-5 flex items-center gap-4 shadow-sm">
       {Icon && (
-        <div className={`w-11 h-11 rounded-xl flex items-center justify-center flex-shrink-0 ${colorMap[color]}`}>
+        <div
+          className={`w-11 h-11 rounded-xl flex items-center justify-center flex-shrink-0 ${colorMap[color]}`}
+        >
           <Icon size={18} />
         </div>
       )}
@@ -85,7 +87,7 @@ const SellerDashboard = () => {
         setLoading(true);
         const { data } = await api.get("/auctions/all");
         const myItems = (data.items || []).filter(
-          (item) => item.createdBy === user?._id
+          (item) => item.createdBy === user?._id,
         );
         setAuctions(myItems);
       } catch (error) {
@@ -100,7 +102,7 @@ const SellerDashboard = () => {
   const stats = useMemo(() => {
     const totalRevenue = auctions.reduce(
       (acc, curr) => acc + (Number(curr.currentBid) || 0),
-      0
+      0,
     );
     const liveItems = auctions.filter((a) => a.status === "Live");
 
@@ -111,7 +113,7 @@ const SellerDashboard = () => {
         bidderName: bid.bidderName || bid.userName || "User",
         bidAmount: Number(bid.bidAmount || bid.amount || 0),
         bidTime: bid.createdAt || item.createdAt,
-      }))
+      })),
     );
 
     const days = [...Array(7)]
@@ -136,24 +138,28 @@ const SellerDashboard = () => {
 
   return (
     <div className="min-h-screen bg-[#F7F8FA] flex font-sans text-slate-900">
-
-      {/* ── Sidebar ── */}
+      {/* Sidebar */}
       <aside className="w-60 bg-white border-r border-slate-100 hidden lg:flex flex-col fixed h-full z-50">
-        {/* Logo */}
         <div className="flex items-center gap-2.5 px-6 py-5 border-b border-slate-100">
           <div className="w-8 h-8 bg-indigo-600 rounded-lg flex items-center justify-center text-white">
             <Gavel size={16} />
           </div>
-          <span className="font-bold text-indigo-900 text-lg tracking-tight">Auction</span>
+          <span className="font-bold text-indigo-900 text-lg tracking-tight">
+            Auction
+          </span>
         </div>
 
-        {/* Seller badge */}
         <div className="mx-4 mt-4 mb-2 bg-indigo-50 rounded-xl px-3 py-2.5 flex items-center gap-2">
           <Shield size={14} className="text-indigo-600" />
           <div>
-            <p className="text-[11px] text-indigo-400 font-medium">Logged in as</p>
+            <p className="text-[11px] text-indigo-400 font-medium">
+              Logged in as
+            </p>
             <p className="text-xs font-bold text-indigo-700 truncate">
-              {user?.name || user?.email || "Seller"}
+              {user?.name || user?.email || "User"}
+            </p>
+            <p className="text-[11px] text-indigo-500 font-semibold capitalize">
+              {user?.role || "Seller"}
             </p>
           </div>
         </div>
@@ -177,7 +183,10 @@ const SellerDashboard = () => {
         {/* Logout */}
         <div className="p-4 border-t border-slate-100">
           <button
-            onClick={() => { sessionStorage.clear(); navigate("/login"); }}
+            onClick={() => {
+              sessionStorage.clear();
+              navigate("/login");
+            }}
             className="w-full flex items-center gap-2 text-slate-500 hover:text-red-500 text-sm font-medium px-3 py-2 rounded-lg hover:bg-red-50 transition"
           >
             <LogOut size={15} /> Sign Out
@@ -187,11 +196,12 @@ const SellerDashboard = () => {
 
       {/* ── Main Content ── */}
       <main className="flex-1 lg:ml-60 p-8 min-h-screen">
-
         {/* Page Header */}
         <div className="mb-8">
           <h1 className="text-2xl font-bold text-slate-800">Dashboard</h1>
-          <p className="text-sm text-slate-400 mt-0.5">Real-time performance overview</p>
+          <p className="text-sm text-slate-400 mt-0.5">
+            Real-time performance overview
+          </p>
         </div>
 
         {/* Stat Cards */}
@@ -218,21 +228,32 @@ const SellerDashboard = () => {
 
         {/* Chart + Recent Bids */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
-
           {/* Area Chart */}
           <div className="lg:col-span-2 bg-white rounded-2xl border border-slate-100 shadow-sm p-6">
-            <p className="text-sm font-semibold text-slate-700 mb-1">Listings This Week</p>
-            <p className="text-xs text-slate-400 mb-5">Items listed per day over the last 7 days</p>
+            <p className="text-sm font-semibold text-slate-700 mb-1">
+              Listings This Week
+            </p>
+            <p className="text-xs text-slate-400 mb-5">
+              Items listed per day over the last 7 days
+            </p>
             <div className="h-[260px] w-full">
               <ResponsiveContainer width="100%" height="100%">
                 <AreaChart data={stats.chartData}>
                   <defs>
                     <linearGradient id="colorCount" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="5%" stopColor="#6366f1" stopOpacity={0.12} />
+                      <stop
+                        offset="5%"
+                        stopColor="#6366f1"
+                        stopOpacity={0.12}
+                      />
                       <stop offset="95%" stopColor="#6366f1" stopOpacity={0} />
                     </linearGradient>
                   </defs>
-                  <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
+                  <CartesianGrid
+                    strokeDasharray="3 3"
+                    vertical={false}
+                    stroke="#f1f5f9"
+                  />
                   <XAxis
                     dataKey="name"
                     axisLine={false}
@@ -270,10 +291,14 @@ const SellerDashboard = () => {
 
           {/* Recent Bids */}
           <div className="bg-white rounded-2xl border border-slate-100 shadow-sm p-6 flex flex-col">
-            <p className="text-sm font-semibold text-slate-700 mb-4">Latest Bids</p>
+            <p className="text-sm font-semibold text-slate-700 mb-4">
+              Latest Bids
+            </p>
             <div className="flex-1 space-y-3 overflow-y-auto">
               {stats.recentBids.length === 0 && (
-                <p className="text-xs text-slate-400 text-center py-6">No bids yet.</p>
+                <p className="text-xs text-slate-400 text-center py-6">
+                  No bids yet.
+                </p>
               )}
               {stats.recentBids.map((bid, i) => (
                 <div key={i} className="flex items-center gap-3">
@@ -281,8 +306,12 @@ const SellerDashboard = () => {
                     <User size={14} className="text-indigo-400" />
                   </div>
                   <div className="flex-1 min-w-0">
-                    <p className="text-sm font-semibold text-slate-700 truncate">{bid.bidderName}</p>
-                    <p className="text-[11px] text-slate-400 truncate">{bid.itemTitle}</p>
+                    <p className="text-sm font-semibold text-slate-700 truncate">
+                      {bid.bidderName}
+                    </p>
+                    <p className="text-[11px] text-slate-400 truncate">
+                      {bid.itemTitle}
+                    </p>
                   </div>
                   <p className="text-sm font-bold text-indigo-600 flex-shrink-0">
                     NPR {(bid.bidAmount || 0).toLocaleString()}
@@ -303,8 +332,12 @@ const SellerDashboard = () => {
         <div className="bg-white rounded-2xl border border-slate-100 shadow-sm overflow-hidden">
           <div className="px-6 py-4 border-b border-slate-100 flex justify-between items-center">
             <div>
-              <p className="text-sm font-semibold text-slate-700">Active Listings</p>
-              <p className="text-xs text-slate-400 mt-0.5">{stats.activeListings.length} items currently live</p>
+              <p className="text-sm font-semibold text-slate-700">
+                Active Listings
+              </p>
+              <p className="text-xs text-slate-400 mt-0.5">
+                {stats.activeListings.length} items currently live
+              </p>
             </div>
           </div>
 
@@ -312,24 +345,40 @@ const SellerDashboard = () => {
             <table className="w-full text-sm">
               <thead>
                 <tr className="border-b border-slate-100 text-left">
-                  <th className="px-6 py-3.5 text-xs font-semibold text-slate-400 uppercase tracking-wide">Item</th>
-                  <th className="px-6 py-3.5 text-xs font-semibold text-slate-400 uppercase tracking-wide">Current Bid</th>
-                  <th className="px-6 py-3.5 text-xs font-semibold text-slate-400 uppercase tracking-wide text-center">Bids</th>
-                  <th className="px-6 py-3.5 text-xs font-semibold text-slate-400 uppercase tracking-wide">Time Left</th>
-                  <th className="px-6 py-3.5 text-xs font-semibold text-slate-400 uppercase tracking-wide text-right">Actions</th>
+                  <th className="px-6 py-3.5 text-xs font-semibold text-slate-400 uppercase tracking-wide">
+                    Item
+                  </th>
+                  <th className="px-6 py-3.5 text-xs font-semibold text-slate-400 uppercase tracking-wide">
+                    Current Bid
+                  </th>
+                  <th className="px-6 py-3.5 text-xs font-semibold text-slate-400 uppercase tracking-wide text-center">
+                    Bids
+                  </th>
+                  <th className="px-6 py-3.5 text-xs font-semibold text-slate-400 uppercase tracking-wide">
+                    Time Left
+                  </th>
+                  <th className="px-6 py-3.5 text-xs font-semibold text-slate-400 uppercase tracking-wide text-right">
+                    Actions
+                  </th>
                 </tr>
               </thead>
               <tbody>
                 {loading && (
                   <tr>
-                    <td colSpan={5} className="text-center text-slate-400 py-10 text-sm">
+                    <td
+                      colSpan={5}
+                      className="text-center text-slate-400 py-10 text-sm"
+                    >
                       Loading...
                     </td>
                   </tr>
                 )}
                 {!loading && stats.activeListings.length === 0 && (
                   <tr>
-                    <td colSpan={5} className="text-center text-slate-400 py-10 text-sm">
+                    <td
+                      colSpan={5}
+                      className="text-center text-slate-400 py-10 text-sm"
+                    >
                       No active listings.
                     </td>
                   </tr>
@@ -348,13 +397,22 @@ const SellerDashboard = () => {
                             alt={item.title}
                           />
                           <div>
-                            <p className="font-semibold text-slate-800">{item.title}</p>
-                            <p className="text-xs text-slate-400">{item.category}</p>
+                            <p className="font-semibold text-slate-800">
+                              {item.title}
+                            </p>
+                            <p className="text-xs text-slate-400">
+                              {item.category}
+                            </p>
                           </div>
                         </div>
                       </td>
                       <td className="px-6 py-4 font-semibold text-indigo-600">
-                        NPR {(item.currentBid || item.startingBid || 0).toLocaleString()}
+                        NPR{" "}
+                        {(
+                          item.currentBid ||
+                          item.startingBid ||
+                          0
+                        ).toLocaleString()}
                       </td>
                       <td className="px-6 py-4 text-center">
                         <span className="bg-indigo-50 text-indigo-600 px-2.5 py-1 rounded-full text-xs font-semibold border border-indigo-100">

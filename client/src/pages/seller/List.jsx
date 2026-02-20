@@ -109,9 +109,14 @@ const List = () => {
         <div className="mx-4 mt-4 mb-2 bg-indigo-50 rounded-xl px-3 py-2.5 flex items-center gap-2">
           <Shield size={14} className="text-indigo-600" />
           <div>
-            <p className="text-[11px] text-indigo-400 font-medium">Logged in as</p>
+            <p className="text-[11px] text-indigo-400 font-medium">
+              Logged in as
+            </p>
             <p className="text-xs font-bold text-indigo-700 truncate">
-              {user?.name || user?.email || "Seller"}
+              {user?.name || user?.email || "User"}
+            </p>
+            <p className="text-[11px] text-indigo-500 font-semibold capitalize">
+              {user?.role || "Seller"}
             </p>
           </div>
         </div>
