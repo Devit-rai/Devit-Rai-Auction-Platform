@@ -99,6 +99,13 @@ const login = async (data) => {
       statusCode: 401,
       message: "Please verify your email before logging in",
     };
+  if (user.status === "Suspended") {
+  throw { statusCode: 403, message: "Account is suspended" };
+  }
+
+  if (user.status === "Banned") {
+    throw { statusCode: 403, message: "Account is banned" };
+  }
 
   const isMatch = bcrypt.compareSync(data.password, user.password);
   if (!isMatch) throw { statusCode: 401, message: "Invalid email or password" };
@@ -110,6 +117,7 @@ const login = async (data) => {
     phone: user.phone,
     roles: user.roles,
   };
+  
 };
 
 // Forgot Password → Send Reset OTP

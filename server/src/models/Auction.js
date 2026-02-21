@@ -38,6 +38,11 @@ const auctionSchema = new mongoose.Schema({
     userName: String,
     amount: Number,
   },
+  approvalStatus: {
+  type: String,
+  enum: ["Pending", "Approved", "Rejected"],
+  default: "Pending",
+  },
   createdAt: { type: Date, default: Date.now },
 });
 

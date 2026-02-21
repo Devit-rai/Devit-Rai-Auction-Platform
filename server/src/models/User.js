@@ -50,6 +50,11 @@ const userSchema = new mongoose.Schema({
     default: Date.now,
     immutable: true,
   },
+  status: {
+  type: String,
+  enum: ["Active", "Suspended", "Banned"],
+  default: "Active",
+},
 });
 
 const User = mongoose.model("User", userSchema);
