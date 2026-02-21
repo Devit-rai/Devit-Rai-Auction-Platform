@@ -20,6 +20,14 @@ const placeBid = (io) => async (req, res) => {
       return res.status(404).json({ message: "Auction item not found" });
     }
 
+    /* Check if auction is approved by admin */
+    if (auctionItem.approvalStatus !== "Approved") {
+      return res.status(400).json({
+        message: "Auction not approved by admin",
+      });
+    }
+
+    /* Check if auction is live */
     const now = new Date();
 
     /* Allow bidding only when auction is LIVE */
@@ -92,7 +100,7 @@ const placeBid = (io) => async (req, res) => {
     auctionItem.highestBidder = req.user._id;
 
     await auctionItem.save();
-    
+
     const latestBid = {
       userId: req.user._id,
       userName: req.user.name,

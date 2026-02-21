@@ -76,7 +76,8 @@ export const addNewAuctionItem = async (req, res) => {
       currentBid: 0,
       startTime: start,
       endTime: end,
-      status: start > now ? "Upcoming" : "Live",
+      status: "Upcoming",
+      approvalStatus: "Pending",
       image: {
         public_id: uploadResult.public_id,
         url: uploadResult.secure_url,

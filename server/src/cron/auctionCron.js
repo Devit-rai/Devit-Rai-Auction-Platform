@@ -14,6 +14,7 @@ export const auctionCron = (io) => {
 
         /* Upcomming -> Live */
         if (
+          auction.approvalStatus === "Approved" &&
           now >= auction.startTime &&
           now < auction.endTime &&
           auction.status !== "Live"
@@ -49,11 +50,10 @@ export const auctionCron = (io) => {
 
         /* Live Countdown */
         if (auction.status === "Live") {
-            io.to(auction._id.toString()).emit("auctionCountdown", {
-              auctionId: auction._id,
-              endTime: auction.endTime,
-            });
-          
+          io.to(auction._id.toString()).emit("auctionCountdown", {
+            auctionId: auction._id,
+            endTime: auction.endTime,
+          });
         }
 
         /* Save Realtime update */
