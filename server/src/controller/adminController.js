@@ -1,10 +1,9 @@
 import User from "../models/User.js";
 import { Auction } from "../models/Auction.js";
 import mongoose from "mongoose";
+import { sendWinnerEmail } from "../utils/auctionWinner.js";
 
-/* USER MANAGEMENT */
-
-/* Get All Users */
+/* Users Management */
 export const getAllUsers = async (req, res) => {
   try {
     const users = await User.find()
@@ -62,9 +61,7 @@ export const updateUserStatus = async (req, res) => {
   }
 };
 
-/* AUCTION MANAGEMENT */
-
-/* Get All Auctions */
+/* Auction Management */
 export const getAllAuctions = async (req, res) => {
   try {
     const auctions = await Auction.find()
@@ -134,7 +131,29 @@ export const forceCloseAuction = async (req, res) => {
 
     auction.status = "Ended";
     auction.isProcessed = true;
+
+    if (auction.bids && auction.bids.length > 0) {
+      const sortedBids = auction.bids.sort((a, b) => b.amount - a.amount);
+      const winner = sortedBids[0];
+
+      auction.winner = {
+        userId: winner.userId,
+        userName: winner.userName,
+        amount: winner.amount,
+      };
+
+      await sendWinnerEmail(winner.userId, auction);
+    }
+
     await auction.save();
+
+    const io = req.app.get("io");
+    if (io) {
+      io.emit("auctionStatusUpdated", {
+        auctionId: auction._id,
+        status: auction.status,
+      });
+    }
 
     res.status(200).json({
       message: "Auction force closed successfully",

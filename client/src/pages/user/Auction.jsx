@@ -12,23 +12,15 @@ import { toast } from "react-hot-toast";
 const fmt = (n) => "NPR\u00A0" + Number(n).toLocaleString();
 
 const getTimeRemaining = (endTime) => {
-  if (!endTime) 
-    return { label: "N/A", urgent: false, ended: false };
+  if (!endTime) return { label: "N/A", urgent: false, ended: false };
   const total = Date.parse(endTime) - Date.now();
-  if (total <= 0) 
-    return { label: "Ended", urgent: false, ended: true };
-
+  if (total <= 0) return { label: "Ended", urgent: false, ended: true };
   const days = Math.floor(total / 86400000);
   const hours = Math.floor((total / 3600000) % 24);
   const mins = Math.floor((total / 60000) % 60);
-
   const urgent = total < 10800000;
-  if (days > 0) 
-    return { label: `${days}d ${hours}h`, urgent: false, ended: false };
-
-  if (hours > 0) 
-    return { label: `${hours}h ${mins}m`, urgent, ended: false };
-
+  if (days > 0) return { label: `${days}d ${hours}h`, urgent: false, ended: false };
+  if (hours > 0) return { label: `${hours}h ${mins}m`, urgent, ended: false };
   return { label: `${mins}m`, urgent: true, ended: false };
 };
 
@@ -65,7 +57,6 @@ const Countdown = ({ endTime }) => {
   );
 };
 
-// Grid Card
 const AuctionCard = ({ item, isFav, onFav, onClick }) => {
   const time = getTimeRemaining(item.endTime);
   return (
@@ -135,8 +126,6 @@ const AuctionCard = ({ item, isFav, onFav, onClick }) => {
     </article>
   );
 };
-
-// List Row
 const AuctionRow = ({ item, isFav, onFav, onClick }) => (
   <div onClick={onClick}
     className="group flex items-center gap-4 bg-white border border-slate-100 hover:border-indigo-200 hover:shadow-md rounded-2xl p-3 cursor-pointer transition-all duration-200">
@@ -240,7 +229,9 @@ const Auction = () => {
       try {
         setLoading(true);
         const [aRes, wRes] = await Promise.all([api.get("/auctions/all"), api.get("/wishlist")]);
-        setAuctions(aRes.data.items || aRes.data || []);
+        // Only show auctions approved by admin
+        const all = aRes.data.items || aRes.data || [];
+        setAuctions(all.filter((a) => a.approvalStatus === "Approved"));
         setWishlist(wRes.data.wishlist || []);
       } catch { toast.error("Failed to load"); }
       finally { setLoading(false); }
@@ -277,14 +268,15 @@ const Auction = () => {
     .filter((a) => condition === "All" || a.condition === condition)
     .filter((a) => { const p = a.currentBid || a.startingBid || 0; return p >= minPrice && p <= maxPrice; })
     .sort((a, b) => {
-      if (sort === "ending")     return new Date(a.endTime) - new Date(b.endTime);
-      if (sort === "newest")     return new Date(b.createdAt) - new Date(a.createdAt);
+      if (sort === "ending") return new Date(a.endTime) - new Date(b.endTime);
+      if (sort === "newest") return new Date(b.createdAt) - new Date(a.createdAt);
       if (sort === "price_asc")  return (a.currentBid || a.startingBid || 0) - (b.currentBid || b.startingBid || 0);
       if (sort === "price_desc") return (b.currentBid || b.startingBid || 0) - (a.currentBid || a.startingBid || 0);
-      if (sort === "bids")       return (b.bids?.length || 0) - (a.bids?.length || 0);
+      if (sort === "bids") return (b.bids?.length || 0) - (a.bids?.length || 0);
       return 0;
     });
 
+  // auctions already filtered to Approved only, so counts are accurate
   const statusCounts = STATUS_TABS.reduce((acc, t) => ({
     ...acc,
     [t.value]: t.value === "All" ? auctions.length : auctions.filter((a) => a.status === t.value).length,
@@ -307,8 +299,10 @@ const Auction = () => {
             <span className="text-sm font-black text-slate-900 tracking-tight hidden sm:block">BidHub</span>
           </div>
 
+          {/* Divider */}
           <div className="w-px h-5 bg-slate-200 hidden md:block" />
 
+          {/* Nav links */}
           <nav className="hidden md:flex items-center gap-0.5 flex-shrink-0">
             {[
               { label: "Dashboard",     path: "/user-dashboard", active: false },
@@ -327,7 +321,7 @@ const Auction = () => {
 
           <div className="w-px h-5 bg-slate-200 hidden md:block" />
 
-          {/* Search — fills remaining space */}
+          {/* Search */}
           <div className="flex-1 relative max-w-lg">
             <Search size={13} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
             <input
@@ -374,7 +368,6 @@ const Auction = () => {
 
       <div className="max-w-screen-2xl mx-auto px-6 py-8">
 
-        {/* Page title */}
         <div className="flex items-start justify-between mb-7">
           <div>
             <h1 className="text-2xl font-black text-slate-900 tracking-tight">Marketplace</h1>
@@ -401,7 +394,6 @@ const Auction = () => {
                 <span className="bg-white text-indigo-600 text-[9px] font-black w-4 h-4 rounded-full flex items-center justify-center">{activeFilterCount}</span>
               )}
             </button>
-            {/* View toggle */}
             <div className="flex items-center bg-white border border-slate-200 rounded-xl p-1 gap-0.5">
               <button onClick={() => setViewMode("grid")}
                 className={`w-7 h-7 rounded-lg flex items-center justify-center transition ${viewMode === "grid" ? "bg-slate-900 text-white" : "text-slate-400 hover:text-slate-600"}`}>
@@ -415,7 +407,7 @@ const Auction = () => {
           </div>
         </div>
 
-        {/* Status Tabs */}
+        {/* Status Tabs  */}
         <div className="flex items-center gap-2.5 mb-5 overflow-x-auto pb-1">
           {STATUS_TABS.map(({ label, value, icon: Icon, accent }) => {
             const active = statusTab === value;
@@ -484,7 +476,7 @@ const Auction = () => {
                           : "bg-slate-50 text-slate-600 border-slate-200 hover:border-indigo-200 hover:text-indigo-600"
                       }`}>
                       <span className={`w-2 h-2 rounded-full flex-shrink-0 ${
-                        c === "New" ? "bg-emerald-400" : c === "Used" ? "bg-amber-400" : c === "Refurbished" ? "bg-blue-400" : "bg-slate-300"
+                        c === "New" ? "bg-emerald-400" : c === "Used" ? "bg-amber-400" : "bg-slate-300"
                       } ${condition === c ? "bg-white/80" : ""}`} />
                       {c === "All" ? "Any" : c}
                     </button>
@@ -525,7 +517,7 @@ const Auction = () => {
           </div>
         )}
 
-        {/* Results */}
+        {/*  Results */}
         {loading ? (
           <div className="flex flex-col items-center justify-center py-32 gap-3">
             <div className="w-12 h-12 rounded-2xl bg-indigo-600 flex items-center justify-center animate-pulse">
