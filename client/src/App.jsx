@@ -12,6 +12,7 @@ import BidHistory from './pages/seller/BidHistory'
 import List from './pages/seller/List'
 import Auction from './pages/user/Auction'
 import AuctionDetails from './pages/user/AuctionDetails'
+import Profile from './pages/profile/Profile'
 
 function App() {
   const [count, setCount] = useState(0)
@@ -31,6 +32,7 @@ function App() {
           <Route path='/inventory' element={<List/>} />
           <Route path='/auctions' element={<Auction/>} />
           <Route path='/auction/:id' element={<AuctionDetails/>} />
+          <Route path='/profile' element={<Profile/>} />
         </Routes>
       </Router>
     </>

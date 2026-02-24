@@ -6,6 +6,7 @@ import {
   ChevronDown, RotateCcw, ArrowUpRight,
   Clock, Zap, CalendarClock, LayoutGrid,
   List, SlidersHorizontal, Bell, TrendingUp,
+  Shield, User,
 } from "lucide-react";
 import { toast } from "react-hot-toast";
 
@@ -27,18 +28,25 @@ const getTimeRemaining = (endTime) => {
 const CATEGORIES = ["All", "Art", "Electronics", "Vehicles", "Fashion", "Jewelry", "Furniture", "Sports"];
 const CONDITIONS = ["All", "New", "Used", "Refurbished"];
 const SORT_OPTIONS = [
-  { label: "Ending Soon",       value: "ending"     },
-  { label: "Newest Listed",     value: "newest"      },
+  { label: "Ending Soon", value: "ending" },
+  { label: "Newest Listed", value: "newest" },
   { label: "Price: Low → High", value: "price_asc"  },
   { label: "Price: High → Low", value: "price_desc" },
-  { label: "Most Bids",         value: "bids"        },
+  { label: "Most Bids", value: "bids" },
 ];
 const STATUS_TABS = [
-  { label: "All",      value: "All",      icon: LayoutGrid,    accent: "indigo"  },
-  { label: "Live Now", value: "Live",     icon: Zap,           accent: "emerald" },
+  { label: "All", value: "All", icon: LayoutGrid, accent: "indigo"  },
+  { label: "Live Now", value: "Live", icon: Zap, accent: "emerald" },
   { label: "Upcoming", value: "Upcoming", icon: CalendarClock, accent: "amber"   },
-  { label: "Ended",    value: "Ended",    icon: Clock,         accent: "slate"   },
+  { label: "Ended", value: "Ended", icon: Clock, accent: "slate"   },
 ];
+
+// Role badge config
+const getRoleConfig = (roles = []) => {
+  if (roles.includes("admin")) return { label: "Admin", color: "bg-violet-100 text-violet-700", icon: Shield  };
+  if (roles.includes("seller")) return { label: "Seller", color: "bg-emerald-100 text-emerald-700", icon: TrendingUp };
+  return { label: "Bidder", color: "bg-indigo-100 text-indigo-700", icon: User };
+};
 
 // Live Countdown
 const Countdown = ({ endTime }) => {
@@ -126,6 +134,7 @@ const AuctionCard = ({ item, isFav, onFav, onClick }) => {
     </article>
   );
 };
+
 const AuctionRow = ({ item, isFav, onFav, onClick }) => (
   <div onClick={onClick}
     className="group flex items-center gap-4 bg-white border border-slate-100 hover:border-indigo-200 hover:shadow-md rounded-2xl p-3 cursor-pointer transition-all duration-200">
@@ -158,7 +167,7 @@ const AuctionRow = ({ item, isFav, onFav, onClick }) => (
   </div>
 );
 
-// Wishlist 
+// Wishlist Drawer
 const WishlistDrawer = ({ wishlist, open, onClose, onToggleFav, navigate }) => (
   <>
     <aside className={`fixed top-0 right-0 h-full w-[340px] bg-white z-[200] flex flex-col transition-transform duration-300 ease-out shadow-2xl border-l border-slate-100 ${open ? "translate-x-0" : "translate-x-full"}`}>
@@ -204,6 +213,72 @@ const WishlistDrawer = ({ wishlist, open, onClose, onToggleFav, navigate }) => (
   </>
 );
 
+const ProfileDropdown = ({ userName, roles, navigate, onLogout }) => {
+  const [open, setOpen] = useState(false);
+  const roleConfig = getRoleConfig(roles);
+  const RoleIcon = roleConfig.icon;
+
+  return (
+    <div className="relative">
+      <button
+        onClick={() => setOpen((o) => !o)}
+        className="flex items-center gap-2 px-2 py-1 rounded-xl hover:bg-slate-50 transition cursor-pointer border border-transparent hover:border-slate-200"
+      >
+        {/* Avatar */}
+        <div className="w-7 h-7 rounded-full bg-indigo-100 flex items-center justify-center text-indigo-700 font-black text-xs uppercase flex-shrink-0">
+          {userName.charAt(0)}
+        </div>
+        {/* Name + role */}
+        <div className="hidden lg:block leading-none text-left">
+          <p className="text-xs font-bold text-slate-800">{userName}</p>
+          <p className="text-[10px] text-slate-400">{roleConfig.label}</p>
+        </div>
+        <ChevronDown size={12} className={`text-slate-400 hidden lg:block transition-transform duration-200 ${open ? "rotate-180" : ""}`} />
+      </button>
+
+      {open && (
+        <>
+          <div className="fixed inset-0 z-[90]" onClick={() => setOpen(false)} />
+          <div className="absolute right-0 top-full mt-2 w-56 bg-white rounded-2xl border border-slate-200 shadow-xl z-[100] overflow-hidden">
+            {/* Header */}
+            <div className="px-4 py-3.5 bg-gradient-to-br from-indigo-50 to-slate-50 border-b border-slate-100">
+              <div className="flex items-center gap-3">
+                <div className="w-9 h-9 rounded-xl bg-indigo-100 flex items-center justify-center text-indigo-700 font-black text-sm uppercase">
+                  {userName.charAt(0)}
+                </div>
+                <div>
+                  <p className="text-xs font-black text-slate-800 leading-tight">{userName}</p>
+                  <span className={`inline-flex items-center gap-1 text-[10px] font-bold px-1.5 py-0.5 rounded-md ${roleConfig.color}`}>
+                    <RoleIcon size={9} />
+                    {roleConfig.label}
+                  </span>
+                </div>
+              </div>
+            </div>
+
+            {/* Menu items */}
+            <div className="p-1.5">
+              <button
+                onClick={() => { setOpen(false); navigate("/profile"); }}
+                className="w-full flex items-center gap-2.5 px-3 py-2.5 rounded-xl text-xs font-semibold text-slate-700 hover:bg-indigo-50 hover:text-indigo-700 transition"
+              >
+                <User size={13} /> View Profile
+              </button>
+              <div className="h-px bg-slate-100 my-1" />
+              <button
+                onClick={() => { setOpen(false); onLogout(); }}
+                className="w-full flex items-center gap-2.5 px-3 py-2.5 rounded-xl text-xs font-semibold text-red-500 hover:bg-red-50 transition"
+              >
+                <LogOut size={13} /> Log Out
+              </button>
+            </div>
+          </div>
+        </>
+      )}
+    </div>
+  );
+};
+
 const Auction = () => {
   const navigate = useNavigate();
   const [auctions, setAuctions] = useState([]);
@@ -222,14 +297,15 @@ const Auction = () => {
   const [filterOpen, setFilterOpen] = useState(false);
 
   const userData = JSON.parse(sessionStorage.getItem("user"));
-  const userName = userData?.user?.name || userData?.name || "User";
+  const user = userData?.user || userData || {};
+  const userName = user.name || "User";
+  const userRoles = user.roles || ["user"];
 
   useEffect(() => {
     (async () => {
       try {
         setLoading(true);
         const [aRes, wRes] = await Promise.all([api.get("/auctions/all"), api.get("/wishlist")]);
-        // Only show auctions approved by admin
         const all = aRes.data.items || aRes.data || [];
         setAuctions(all.filter((a) => a.approvalStatus === "Approved"));
         setWishlist(wRes.data.wishlist || []);
@@ -276,7 +352,6 @@ const Auction = () => {
       return 0;
     });
 
-  // auctions already filtered to Approved only, so counts are accurate
   const statusCounts = STATUS_TABS.reduce((acc, t) => ({
     ...acc,
     [t.value]: t.value === "All" ? auctions.length : auctions.filter((a) => a.status === t.value).length,
@@ -299,14 +374,12 @@ const Auction = () => {
             <span className="text-sm font-black text-slate-900 tracking-tight hidden sm:block">BidHub</span>
           </div>
 
-          {/* Divider */}
           <div className="w-px h-5 bg-slate-200 hidden md:block" />
 
-          {/* Nav links */}
           <nav className="hidden md:flex items-center gap-0.5 flex-shrink-0">
             {[
-              { label: "Dashboard",     path: "/user-dashboard", active: false },
-              { label: "Live Auctions", path: "/auctions",       active: true  },
+              { label: "Dashboard", path: "/user-dashboard", active: false },
+              { label: "Live Auctions", path: "/auctions", active: true  },
             ].map(({ label, path, active }) => (
               <button key={path} onClick={() => navigate(path)}
                 className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition ${
@@ -348,19 +421,14 @@ const Auction = () => {
               )}
             </button>
             <div className="w-px h-5 bg-slate-200 mx-0.5" />
-            <div className="flex items-center gap-2 px-2 py-1 rounded-lg hover:bg-slate-50 transition cursor-pointer">
-              <div className="w-7 h-7 rounded-full bg-indigo-100 flex items-center justify-center text-indigo-700 font-black text-xs uppercase flex-shrink-0">
-                {userName.charAt(0)}
-              </div>
-              <div className="hidden lg:block leading-none">
-                <p className="text-xs font-bold text-slate-800">{userName}</p>
-                <p className="text-[10px] text-slate-400">Bidder</p>
-              </div>
-            </div>
-            <button onClick={handleLogout}
-              className="w-8 h-8 rounded-lg bg-red-50 border border-red-100 text-red-400 flex items-center justify-center hover:bg-red-500 hover:text-white transition">
-              <LogOut size={13} />
-            </button>
+
+            <ProfileDropdown
+              userName={userName}
+              roles={userRoles}
+              navigate={navigate}
+              onLogout={handleLogout}
+            />
+
           </div>
 
         </div>
@@ -383,7 +451,6 @@ const Auction = () => {
               </select>
               <ChevronDown size={12} className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
             </div>
-            {/* Filters */}
             <button onClick={() => setFilterOpen(!filterOpen)}
               className={`flex items-center gap-2 text-xs font-bold px-3.5 py-2.5 rounded-xl border transition ${
                 filterOpen || activeFilterCount > 0 ? "bg-indigo-600 text-white border-indigo-600" : "bg-white text-slate-600 border-slate-200 hover:border-slate-300"
@@ -407,14 +474,14 @@ const Auction = () => {
           </div>
         </div>
 
-        {/* Status Tabs  */}
+        {/* Status Tabs */}
         <div className="flex items-center gap-2.5 mb-5 overflow-x-auto pb-1">
           {STATUS_TABS.map(({ label, value, icon: Icon, accent }) => {
             const active = statusTab === value;
             const styles = {
               indigo:  { on: "bg-indigo-600 text-white border-indigo-600",  cnt: "bg-white/20 text-white", off: "bg-white text-slate-600 border-slate-200 hover:border-indigo-300 hover:text-indigo-600" },
               emerald: { on: "bg-emerald-600 text-white border-emerald-600", cnt: "bg-white/20 text-white", off: "bg-white text-slate-600 border-slate-200 hover:border-emerald-300 hover:text-emerald-700" },
-              amber:   { on: "bg-amber-500 text-white border-amber-500",    cnt: "bg-white/20 text-white", off: "bg-white text-slate-600 border-slate-200 hover:border-amber-300 hover:text-amber-600" },
+              amber:   { on: "bg-amber-500 text-white border-amber-500", cnt: "bg-white/20 text-white", off: "bg-white text-slate-600 border-slate-200 hover:border-amber-300 hover:text-amber-600" },
               slate:   { on: "bg-slate-800 text-white border-slate-800",    cnt: "bg-white/20 text-white", off: "bg-white text-slate-600 border-slate-200 hover:border-slate-300 hover:text-slate-800" },
             }[accent];
             return (
@@ -517,7 +584,7 @@ const Auction = () => {
           </div>
         )}
 
-        {/*  Results */}
+        {/* Results */}
         {loading ? (
           <div className="flex flex-col items-center justify-center py-32 gap-3">
             <div className="w-12 h-12 rounded-2xl bg-indigo-600 flex items-center justify-center animate-pulse">
