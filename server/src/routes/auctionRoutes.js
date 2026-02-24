@@ -5,7 +5,7 @@ import {
   getAuctionDetails,
   removeFromAuction,
   republishItem,
-} from "../controller/auctionController.js";
+} from "../controllers/auctionController.js";
 
 import auth from "../middlewares/auth.js";
 import roleBasedAuth from "../middlewares/roleBasedAuth.js";

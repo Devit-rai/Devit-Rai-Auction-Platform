@@ -5,7 +5,7 @@ import {
   addToWishlist,
   getWishlist,
   removeFromWishlist,
-} from "../controller/wishlistController.js";
+} from "../controllers/wishlistController.js";
 
 const router = express.Router();
 
