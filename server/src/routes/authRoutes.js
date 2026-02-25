@@ -1,5 +1,7 @@
 import express from "express";
 import authController from "../controllers/authController.js";
+import auth from "../middlewares/auth.js";
+import { getSellerProfile } from "../controllers/authController.js";
 
 const router = express.Router();
 
@@ -23,5 +25,7 @@ router.post("/forgot-password", authController.forgotPassword);
 
 // URL: /api/auth/reset-password
 router.post("/reset-password", authController.resetPassword);
+
+router.get("/seller/:id", auth, getSellerProfile);
 
 export default router;

@@ -6,7 +6,7 @@ import {
   ChevronDown, RotateCcw, ArrowUpRight,
   Clock, Zap, CalendarClock, LayoutGrid,
   List, SlidersHorizontal, Bell, TrendingUp,
-  Shield, User,
+  Shield, User, Star, BadgeCheck, Mail,
 } from "lucide-react";
 import { toast } from "react-hot-toast";
 
@@ -65,8 +65,119 @@ const Countdown = ({ endTime }) => {
   );
 };
 
-const AuctionCard = ({ item, isFav, onFav, onClick }) => {
+// Seller chip with hover popup preview
+const SellerChip = ({ seller, navigate, className = "" }) => {
+  const [hovered, setHovered] = useState(false);
+  const leaveTimer = React.useRef(null);
+  if (!seller) return null;
+
+  const name = seller.name || "Unknown Seller";
+  const initial = name.charAt(0).toUpperCase();
+  const avatar = seller.profileImage?.url || seller.profileImage || null;
+  const memberSince = seller.createdAt
+    ? new Date(seller.createdAt).toLocaleDateString("en-US", { month: "short", year: "numeric" })
+    : null;
+
+  const handleClick = (e) => {
+    e.stopPropagation();
+    if (seller._id) navigate(`/seller/${seller._id}`);
+  };
+
+  const handleMouseEnter = () => {
+    clearTimeout(leaveTimer.current);
+    setHovered(true);
+  };
+
+  const handleMouseLeave = () => {
+    leaveTimer.current = setTimeout(() => setHovered(false), 120);
+  };
+
+  return (
+    <div
+      className={`relative inline-flex items-center ${className}`}
+      onMouseEnter={handleMouseEnter}
+      onMouseLeave={handleMouseLeave}
+    >
+      {/* Chip trigger */}
+      <button onClick={handleClick} className="flex items-center gap-1.5 group/seller transition">
+        {avatar ? (
+          <img src={avatar} alt={name}
+            className="w-5 h-5 rounded-full object-cover ring-1 ring-slate-200 flex-shrink-0" />
+        ) : (
+          <div className="w-5 h-5 rounded-full bg-indigo-100 flex items-center justify-center text-indigo-700 font-black text-[9px] flex-shrink-0 ring-1 ring-indigo-200">
+            {initial}
+          </div>
+        )}
+        <span className="text-[11px] font-semibold text-slate-500 group-hover/seller:text-indigo-600 truncate max-w-[100px] transition-colors leading-none">
+          {name}
+        </span>
+        {seller.isVerified && <BadgeCheck size={11} className="text-indigo-400 flex-shrink-0" />}
+      </button>
+
+      {/* Hover popup */}
+      {hovered && (
+        <div
+          onClick={(e) => e.stopPropagation()}
+          className="absolute bottom-full left-0 mb-2 z-[300] w-56 bg-white rounded-2xl border border-slate-200 shadow-2xl overflow-hidden"
+          style={{ animation: "fadeSlideUp 0.15s ease-out" }}
+        >
+          <style>{`
+            @keyframes fadeSlideUp {
+              from { opacity: 0; transform: translateY(6px); }
+              to   { opacity: 1; transform: translateY(0); }
+            }
+          `}</style>
+
+          {/* Banner */}
+          <div className="h-10 bg-gradient-to-br from-indigo-500 to-violet-600 relative">
+            <div className="absolute inset-0 opacity-20"
+              style={{ backgroundImage: "radial-gradient(circle at 30% 50%, white 1px, transparent 1px)", backgroundSize: "12px 12px" }} />
+          </div>
+
+          <div className="px-4 pb-4">
+            {/* Avatar overlapping banner */}
+ 
+              <div className="w-10 h-10 rounded-xl bg-white border-2 border-white shadow-md flex items-center justify-center overflow-hidden">
+                  <div className="w-full h-full bg-indigo-600 flex items-center justify-center text-white font-black text-sm">
+                    {initial}
+                  </div>
+                
+                {seller.isVerified && (
+                  <span className="inline-flex items-center gap-1 text-[10px] font-bold text-indigo-600 bg-indigo-50 border border-indigo-100 px-2 py-0.5 rounded-full">
+                    <BadgeCheck size={9} /> Verified
+                  </span>
+              )}
+            </div>
+
+            <p className="text-sm font-black text-slate-800 leading-tight">{name}</p>
+            <p className="text-[11px] text-slate-400 mt-0.5 truncate">{seller.email}</p>
+
+            {memberSince && (
+              <p className="text-[10px] text-slate-400 mt-1.5 flex items-center gap-1">
+                <Star size={9} className="text-amber-400" />
+                Member since {memberSince}
+              </p>
+            )}
+
+            <div className="h-px bg-slate-100 my-3" />
+
+            <button
+              onClick={handleClick}
+              className="w-full flex items-center justify-center gap-1.5 bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold py-2 rounded-xl transition-all"
+            >
+              View Full Profile <ArrowUpRight size={11} />
+            </button>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+};
+
+const AuctionCard = ({ item, isFav, onFav, onClick, navigate }) => {
   const time = getTimeRemaining(item.endTime);
+  const seller = item.createdBy || null;
+
   return (
     <article
       onClick={onClick}
@@ -111,11 +222,34 @@ const AuctionCard = ({ item, isFav, onFav, onClick }) => {
       </div>
 
       <div className="p-4 flex flex-col flex-1">
-        <p className="text-[10px] font-semibold text-slate-400 uppercase tracking-widest mb-1">{item.category}</p>
-        <h3 className="text-sm font-bold text-slate-800 leading-snug line-clamp-2 group-hover:text-indigo-700 transition-colors mb-3">
+        {/* Category + condition row */}
+        <div className="flex items-center justify-between mb-1">
+          <p className="text-[10px] font-semibold text-slate-400 uppercase tracking-widest">{item.category}</p>
+          {item.condition && item.condition !== "Active" && (
+            <span className={`text-[9px] font-bold px-1.5 py-0.5 rounded-md ${
+              item.condition === "New" ? "bg-emerald-50 text-emerald-600" :
+              item.condition === "Used" ? "bg-amber-50 text-amber-600" :
+              "bg-slate-100 text-slate-500"
+            }`}>
+              {item.condition}
+            </span>
+          )}
+        </div>
+
+        <h3 className="text-sm font-bold text-slate-800 leading-snug line-clamp-2 group-hover:text-indigo-700 transition-colors mb-2">
           {item.title}
         </h3>
-        <div className="h-px bg-slate-100 mb-3" />
+
+        {/* Seller row */}
+        {seller && (
+          <div className="flex items-center gap-1 mb-2.5 pb-2.5 border-b border-slate-100">
+            <span className="text-[10px] text-slate-400 flex-shrink-0">by</span>
+            <SellerChip seller={seller} navigate={navigate} />
+          </div>
+        )}
+
+        {!seller && <div className="h-px bg-slate-100 mb-3" />}
+
         <div className="flex items-end justify-between mt-auto mb-4">
           <div>
             <p className="text-[10px] text-slate-400 font-medium mb-0.5">Current Bid</p>
@@ -135,37 +269,60 @@ const AuctionCard = ({ item, isFav, onFav, onClick }) => {
   );
 };
 
-const AuctionRow = ({ item, isFav, onFav, onClick }) => (
-  <div onClick={onClick}
-    className="group flex items-center gap-4 bg-white border border-slate-100 hover:border-indigo-200 hover:shadow-md rounded-2xl p-3 cursor-pointer transition-all duration-200">
-    <div className="relative w-20 h-20 rounded-xl overflow-hidden flex-shrink-0">
-      <img src={item.image?.url} alt={item.title} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" />
+const AuctionRow = ({ item, isFav, onFav, onClick, navigate }) => {
+  const seller = item.createdBy || null;
+
+  return (
+    <div onClick={onClick}
+      className="group flex items-center gap-4 bg-white border border-slate-100 hover:border-indigo-200 hover:shadow-md rounded-2xl p-3 cursor-pointer transition-all duration-200">
+      <div className="relative w-20 h-20 rounded-xl overflow-hidden flex-shrink-0">
+        <img src={item.image?.url} alt={item.title} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" />
+      </div>
+      <div className="flex-1 min-w-0">
+        <p className="text-[10px] font-semibold text-slate-400 uppercase tracking-widest">{item.category}</p>
+        <h3 className="text-sm font-bold text-slate-800 truncate group-hover:text-indigo-700 transition-colors">{item.title}</h3>
+        <div className="flex items-center gap-2 mt-1 flex-wrap">
+          <p className="text-xs text-slate-400">{item.bids?.length || 0} bids</p>
+          {item.condition && item.condition !== "Active" && (
+            <>
+              <span className="text-slate-300">·</span>
+              <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded-md ${
+                item.condition === "New" ? "bg-emerald-50 text-emerald-600" :
+                item.condition === "Used" ? "bg-amber-50 text-amber-600" :
+                "bg-slate-100 text-slate-500"
+              }`}>{item.condition}</span>
+            </>
+          )}
+          {seller && (
+            <>
+              <span className="text-slate-300">·</span>
+              <span className="text-[10px] text-slate-400">by</span>
+              <SellerChip seller={seller} navigate={navigate} />
+            </>
+          )}
+        </div>
+      </div>
+      <div className="text-right flex-shrink-0 hidden sm:block">
+        <p className="text-[10px] text-slate-400">Current Bid</p>
+        <p className="text-sm font-black text-slate-900">{fmt(item.currentBid || item.startingBid || 0)}</p>
+      </div>
+      <div className="text-right flex-shrink-0 hidden md:block w-24">
+        <p className="text-[10px] text-slate-400">Time Left</p>
+        <Countdown endTime={item.endTime} />
+      </div>
+      <div className="flex items-center gap-2 flex-shrink-0">
+        <button onClick={(e) => { e.stopPropagation(); onFav(e, item._id); }}
+          className={`w-8 h-8 rounded-xl flex items-center justify-center transition ${isFav ? "bg-red-50 text-red-500" : "bg-slate-50 text-slate-400 hover:text-red-400"}`}>
+          <Heart size={13} fill={isFav ? "currentColor" : "none"} />
+        </button>
+        <button onClick={(e) => { e.stopPropagation(); onClick(); }}
+          className="bg-slate-900 hover:bg-indigo-600 text-white text-xs font-bold px-4 py-2 rounded-xl transition-all">
+          Bid Now
+        </button>
+      </div>
     </div>
-    <div className="flex-1 min-w-0">
-      <p className="text-[10px] font-semibold text-slate-400 uppercase tracking-widest">{item.category}</p>
-      <h3 className="text-sm font-bold text-slate-800 truncate group-hover:text-indigo-700 transition-colors">{item.title}</h3>
-      <p className="text-xs text-slate-400 mt-0.5">{item.bids?.length || 0} bids · {item.condition || "Active"}</p>
-    </div>
-    <div className="text-right flex-shrink-0 hidden sm:block">
-      <p className="text-[10px] text-slate-400">Current Bid</p>
-      <p className="text-sm font-black text-slate-900">{fmt(item.currentBid || item.startingBid || 0)}</p>
-    </div>
-    <div className="text-right flex-shrink-0 hidden md:block w-24">
-      <p className="text-[10px] text-slate-400">Time Left</p>
-      <Countdown endTime={item.endTime} />
-    </div>
-    <div className="flex items-center gap-2 flex-shrink-0">
-      <button onClick={(e) => { e.stopPropagation(); onFav(e, item._id); }}
-        className={`w-8 h-8 rounded-xl flex items-center justify-center transition ${isFav ? "bg-red-50 text-red-500" : "bg-slate-50 text-slate-400 hover:text-red-400"}`}>
-        <Heart size={13} fill={isFav ? "currentColor" : "none"} />
-      </button>
-      <button onClick={(e) => { e.stopPropagation(); onClick(); }}
-        className="bg-slate-900 hover:bg-indigo-600 text-white text-xs font-bold px-4 py-2 rounded-xl transition-all">
-        Bid Now
-      </button>
-    </div>
-  </div>
-);
+  );
+};
 
 // Wishlist Drawer
 const WishlistDrawer = ({ wishlist, open, onClose, onToggleFav, navigate }) => (
@@ -224,11 +381,9 @@ const ProfileDropdown = ({ userName, roles, navigate, onLogout }) => {
         onClick={() => setOpen((o) => !o)}
         className="flex items-center gap-2 px-2 py-1 rounded-xl hover:bg-slate-50 transition cursor-pointer border border-transparent hover:border-slate-200"
       >
-        {/* Avatar */}
         <div className="w-7 h-7 rounded-full bg-indigo-100 flex items-center justify-center text-indigo-700 font-black text-xs uppercase flex-shrink-0">
           {userName.charAt(0)}
         </div>
-        {/* Name + role */}
         <div className="hidden lg:block leading-none text-left">
           <p className="text-xs font-bold text-slate-800">{userName}</p>
           <p className="text-[10px] text-slate-400">{roleConfig.label}</p>
@@ -240,7 +395,6 @@ const ProfileDropdown = ({ userName, roles, navigate, onLogout }) => {
         <>
           <div className="fixed inset-0 z-[90]" onClick={() => setOpen(false)} />
           <div className="absolute right-0 top-full mt-2 w-56 bg-white rounded-2xl border border-slate-200 shadow-xl z-[100] overflow-hidden">
-            {/* Header */}
             <div className="px-4 py-3.5 bg-gradient-to-br from-indigo-50 to-slate-50 border-b border-slate-100">
               <div className="flex items-center gap-3">
                 <div className="w-9 h-9 rounded-xl bg-indigo-100 flex items-center justify-center text-indigo-700 font-black text-sm uppercase">
@@ -255,8 +409,6 @@ const ProfileDropdown = ({ userName, roles, navigate, onLogout }) => {
                 </div>
               </div>
             </div>
-
-            {/* Menu items */}
             <div className="p-1.5">
               <button
                 onClick={() => { setOpen(false); navigate("/profile"); }}
@@ -428,7 +580,6 @@ const Auction = () => {
               navigate={navigate}
               onLogout={handleLogout}
             />
-
           </div>
 
         </div>
@@ -609,7 +760,9 @@ const Auction = () => {
               <AuctionCard key={item._id} item={item}
                 isFav={wishlist.some((f) => f.auctionItem._id === item._id)}
                 onFav={toggleFav}
-                onClick={() => navigate(`/auction/${item._id}`)} />
+                onClick={() => navigate(`/auction/${item._id}`)}
+                navigate={navigate}
+              />
             ))}
           </div>
         ) : (
@@ -618,7 +771,9 @@ const Auction = () => {
               <AuctionRow key={item._id} item={item}
                 isFav={wishlist.some((f) => f.auctionItem._id === item._id)}
                 onFav={toggleFav}
-                onClick={() => navigate(`/auction/${item._id}`)} />
+                onClick={() => navigate(`/auction/${item._id}`)}
+                navigate={navigate}
+              />
             ))}
           </div>
         )}
