@@ -14,6 +14,7 @@ import Auction from './pages/user/Auction'
 import AuctionDetails from './pages/user/AuctionDetails'
 import Profile from './pages/profile/Profile'
 import SellerProfile from './pages/seller/SellerProfile'
+import ForgetPassword from './pages/profile/ForgetPassword'
 
 function App() {
   const [count, setCount] = useState(0)
@@ -35,6 +36,7 @@ function App() {
           <Route path='/auction/:id' element={<AuctionDetails/>} />
           <Route path='/profile' element={<Profile/>} />
           <Route path='/seller/:id' element={<SellerProfile/>} />
+          <Route path='/forget-password' element={<ForgetPassword/>} />
         </Routes>
       </Router>
     </>
