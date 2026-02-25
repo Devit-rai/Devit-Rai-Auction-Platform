@@ -6,6 +6,7 @@ import {
   ChevronDown, RotateCcw, ArrowUpRight,
   Clock, Zap, CalendarClock, LayoutGrid,
   List, SlidersHorizontal, Bell, TrendingUp,
+  Shield, User, Star, BadgeCheck, Mail,
 } from "lucide-react";
 import { toast } from "react-hot-toast";
 
@@ -27,18 +28,25 @@ const getTimeRemaining = (endTime) => {
 const CATEGORIES = ["All", "Art", "Electronics", "Vehicles", "Fashion", "Jewelry", "Furniture", "Sports"];
 const CONDITIONS = ["All", "New", "Used", "Refurbished"];
 const SORT_OPTIONS = [
-  { label: "Ending Soon",       value: "ending"     },
-  { label: "Newest Listed",     value: "newest"      },
+  { label: "Ending Soon", value: "ending" },
+  { label: "Newest Listed", value: "newest" },
   { label: "Price: Low → High", value: "price_asc"  },
   { label: "Price: High → Low", value: "price_desc" },
-  { label: "Most Bids",         value: "bids"        },
+  { label: "Most Bids", value: "bids" },
 ];
 const STATUS_TABS = [
-  { label: "All",      value: "All",      icon: LayoutGrid,    accent: "indigo"  },
-  { label: "Live Now", value: "Live",     icon: Zap,           accent: "emerald" },
+  { label: "All", value: "All", icon: LayoutGrid, accent: "indigo"  },
+  { label: "Live Now", value: "Live", icon: Zap, accent: "emerald" },
   { label: "Upcoming", value: "Upcoming", icon: CalendarClock, accent: "amber"   },
-  { label: "Ended",    value: "Ended",    icon: Clock,         accent: "slate"   },
+  { label: "Ended", value: "Ended", icon: Clock, accent: "slate"   },
 ];
+
+// Role badge config
+const getRoleConfig = (roles = []) => {
+  if (roles.includes("admin")) return { label: "Admin", color: "bg-violet-100 text-violet-700", icon: Shield  };
+  if (roles.includes("seller")) return { label: "Seller", color: "bg-emerald-100 text-emerald-700", icon: TrendingUp };
+  return { label: "Bidder", color: "bg-indigo-100 text-indigo-700", icon: User };
+};
 
 // Live Countdown
 const Countdown = ({ endTime }) => {
@@ -57,8 +65,167 @@ const Countdown = ({ endTime }) => {
   );
 };
 
-const AuctionCard = ({ item, isFav, onFav, onClick }) => {
+// Seller chip with hover popup preview + live review data
+const SellerChip = ({ seller, navigate, className = "" }) => {
+  const [hovered, setHovered] = useState(false);
+  const [reviewData, setReviewData] = useState(null);
+  const [reviewLoading, setReviewLoading] = useState(false);
+  const leaveTimer = React.useRef(null);
+  const fetchedRef = React.useRef(false);
+
+  if (!seller) return null;
+
+  const name = seller.name || "Unknown Seller";
+  const initial = name.charAt(0).toUpperCase();
+  const avatar = seller.profileImage?.url || seller.profileImage || null;
+  const memberSince = seller.createdAt
+    ? new Date(seller.createdAt).toLocaleDateString("en-US", { month: "short", year: "numeric" })
+    : null;
+
+  const handleClick = (e) => {
+    e.stopPropagation();
+    if (seller._id) navigate(`/seller/${seller._id}`);
+  };
+
+  const handleMouseEnter = () => {
+    clearTimeout(leaveTimer.current);
+    setHovered(true);
+    // Fetch reviews once on first hover
+    if (!fetchedRef.current && seller._id) {
+      fetchedRef.current = true;
+      setReviewLoading(true);
+      api.get(`/reviews/${seller._id}`)
+        .then((res) => setReviewData({ avg: res.data.avgRating, total: res.data.total }))
+        .catch(() => setReviewData({ avg: 0, total: 0 }))
+        .finally(() => setReviewLoading(false));
+    }
+  };
+
+  const handleMouseLeave = () => {
+    leaveTimer.current = setTimeout(() => setHovered(false), 150);
+  };
+
+  // Render stars inline
+  const renderStars = (rating) =>
+    [1, 2, 3, 4, 5].map((s) => (
+      <Star key={s} size={10}
+        className={s <= Math.round(rating) ? "text-amber-400 fill-amber-400" : "text-slate-200 fill-slate-200"} />
+    ));
+
+  return (
+    <div
+      className={`relative inline-flex items-center ${className}`}
+      onMouseEnter={handleMouseEnter}
+      onMouseLeave={handleMouseLeave}
+    >
+      {/* Chip trigger */}
+      <button onClick={handleClick} className="flex items-center gap-1.5 group/seller transition">
+        {avatar ? (
+          <img src={avatar} alt={name}
+            className="w-5 h-5 rounded-full object-cover ring-1 ring-slate-200 flex-shrink-0" />
+        ) : (
+          <div className="w-5 h-5 rounded-full bg-indigo-100 flex items-center justify-center text-indigo-700 font-black text-[9px] flex-shrink-0 ring-1 ring-indigo-200">
+            {initial}
+          </div>
+        )}
+        <span className="text-[11px] font-semibold text-slate-500 group-hover/seller:text-indigo-600 truncate max-w-[100px] transition-colors leading-none">
+          {name}
+        </span>
+        {seller.isVerified && <BadgeCheck size={11} className="text-indigo-400 flex-shrink-0" />}
+      </button>
+
+      {/* Hover popup */}
+      {hovered && (
+        <div
+          onClick={(e) => e.stopPropagation()}
+          className="absolute bottom-full left-0 mb-2 z-[300] w-64 bg-white rounded-2xl border border-slate-200 shadow-2xl overflow-hidden"
+          style={{ animation: "fadeSlideUp 0.15s ease-out" }}
+        >
+          <style>{`
+            @keyframes fadeSlideUp {
+              from { opacity: 0; transform: translateY(6px); }
+              to   { opacity: 1; transform: translateY(0); }
+            }
+          `}</style>
+
+          <div className="px-4 pt-4 pb-4">
+            {/* Avatar + verified */}
+            <div className="mb-3 flex items-center justify-between">
+              <div className="w-10 h-10 rounded-xl bg-indigo-100 border border-indigo-200 shadow-sm flex items-center justify-center overflow-hidden">
+                {avatar ? (
+                  <img src={avatar} alt={name} className="w-full h-full object-cover" />
+                ) : (
+                  <div className="w-full h-full bg-indigo-600 flex items-center justify-center text-white font-black text-sm">
+                    {initial}
+                  </div>
+                )}
+              </div>
+              {seller.isVerified && (
+                <span className="inline-flex items-center gap-1 text-[10px] font-bold text-indigo-600 bg-indigo-50 border border-indigo-100 px-2 py-0.5 rounded-full">
+                  <BadgeCheck size={9} /> Verified
+                </span>
+              )}
+            </div>
+
+            {/* Name + email */}
+            <p className="text-sm font-black text-slate-800 leading-tight">{name}</p>
+            <p className="text-[11px] text-slate-400 mt-0.5 truncate">{seller.email}</p>
+
+            {memberSince && (
+              <p className="text-[10px] text-slate-400 mt-1 flex items-center gap-1">
+                <Star size={9} className="text-slate-300" />
+                Member since {memberSince}
+              </p>
+            )}
+
+            {/* ── Review section ── */}
+            <div className="mt-3 pt-3 border-t border-slate-100">
+              {reviewLoading ? (
+                <div className="flex items-center gap-2">
+                  <div className="w-3 h-3 rounded-full border border-indigo-300 border-t-indigo-600 animate-spin" />
+                  <span className="text-[11px] text-slate-400">Loading reviews...</span>
+                </div>
+              ) : reviewData && reviewData.total > 0 ? (
+                <div className="flex items-center justify-between">
+                  <div>
+                    <div className="flex items-center gap-1 mb-0.5">
+                      {renderStars(reviewData.avg)}
+                      <span className="text-xs font-black text-amber-600 ml-1">{reviewData.avg}</span>
+                    </div>
+                    <p className="text-[10px] text-slate-400">{reviewData.total} review{reviewData.total !== 1 ? "s" : ""}</p>
+                  </div>
+                  <div className="bg-amber-50 border border-amber-100 rounded-xl px-2.5 py-1.5 text-center">
+                    <p className="text-base font-black text-amber-600 leading-none">{reviewData.avg}</p>
+                    <p className="text-[9px] text-amber-400 font-medium">/ 5</p>
+                  </div>
+                </div>
+              ) : (
+                <div className="flex items-center gap-1.5">
+                  <div className="flex gap-0.5">{renderStars(0)}</div>
+                  <p className="text-[11px] text-slate-400">No reviews yet</p>
+                </div>
+              )}
+            </div>
+
+            <div className="h-px bg-slate-100 mt-3 mb-3" />
+
+            <button
+              onClick={handleClick}
+              className="w-full flex items-center justify-center gap-1.5 bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold py-2 rounded-xl transition-all"
+            >
+              View Full Profile <ArrowUpRight size={11} />
+            </button>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+};
+
+const AuctionCard = ({ item, isFav, onFav, onClick, navigate }) => {
   const time = getTimeRemaining(item.endTime);
+  const seller = item.createdBy || null;
+
   return (
     <article
       onClick={onClick}
@@ -103,11 +270,34 @@ const AuctionCard = ({ item, isFav, onFav, onClick }) => {
       </div>
 
       <div className="p-4 flex flex-col flex-1">
-        <p className="text-[10px] font-semibold text-slate-400 uppercase tracking-widest mb-1">{item.category}</p>
-        <h3 className="text-sm font-bold text-slate-800 leading-snug line-clamp-2 group-hover:text-indigo-700 transition-colors mb-3">
+        {/* Category + condition row */}
+        <div className="flex items-center justify-between mb-1">
+          <p className="text-[10px] font-semibold text-slate-400 uppercase tracking-widest">{item.category}</p>
+          {item.condition && item.condition !== "Active" && (
+            <span className={`text-[9px] font-bold px-1.5 py-0.5 rounded-md ${
+              item.condition === "New" ? "bg-emerald-50 text-emerald-600" :
+              item.condition === "Used" ? "bg-amber-50 text-amber-600" :
+              "bg-slate-100 text-slate-500"
+            }`}>
+              {item.condition}
+            </span>
+          )}
+        </div>
+
+        <h3 className="text-sm font-bold text-slate-800 leading-snug line-clamp-2 group-hover:text-indigo-700 transition-colors mb-2">
           {item.title}
         </h3>
-        <div className="h-px bg-slate-100 mb-3" />
+
+        {/* Seller row */}
+        {seller && (
+          <div className="flex items-center gap-1 mb-2.5 pb-2.5 border-b border-slate-100">
+            <span className="text-[10px] text-slate-400 flex-shrink-0">by</span>
+            <SellerChip seller={seller} navigate={navigate} />
+          </div>
+        )}
+
+        {!seller && <div className="h-px bg-slate-100 mb-3" />}
+
         <div className="flex items-end justify-between mt-auto mb-4">
           <div>
             <p className="text-[10px] text-slate-400 font-medium mb-0.5">Current Bid</p>
@@ -126,39 +316,63 @@ const AuctionCard = ({ item, isFav, onFav, onClick }) => {
     </article>
   );
 };
-const AuctionRow = ({ item, isFav, onFav, onClick }) => (
-  <div onClick={onClick}
-    className="group flex items-center gap-4 bg-white border border-slate-100 hover:border-indigo-200 hover:shadow-md rounded-2xl p-3 cursor-pointer transition-all duration-200">
-    <div className="relative w-20 h-20 rounded-xl overflow-hidden flex-shrink-0">
-      <img src={item.image?.url} alt={item.title} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" />
-    </div>
-    <div className="flex-1 min-w-0">
-      <p className="text-[10px] font-semibold text-slate-400 uppercase tracking-widest">{item.category}</p>
-      <h3 className="text-sm font-bold text-slate-800 truncate group-hover:text-indigo-700 transition-colors">{item.title}</h3>
-      <p className="text-xs text-slate-400 mt-0.5">{item.bids?.length || 0} bids · {item.condition || "Active"}</p>
-    </div>
-    <div className="text-right flex-shrink-0 hidden sm:block">
-      <p className="text-[10px] text-slate-400">Current Bid</p>
-      <p className="text-sm font-black text-slate-900">{fmt(item.currentBid || item.startingBid || 0)}</p>
-    </div>
-    <div className="text-right flex-shrink-0 hidden md:block w-24">
-      <p className="text-[10px] text-slate-400">Time Left</p>
-      <Countdown endTime={item.endTime} />
-    </div>
-    <div className="flex items-center gap-2 flex-shrink-0">
-      <button onClick={(e) => { e.stopPropagation(); onFav(e, item._id); }}
-        className={`w-8 h-8 rounded-xl flex items-center justify-center transition ${isFav ? "bg-red-50 text-red-500" : "bg-slate-50 text-slate-400 hover:text-red-400"}`}>
-        <Heart size={13} fill={isFav ? "currentColor" : "none"} />
-      </button>
-      <button onClick={(e) => { e.stopPropagation(); onClick(); }}
-        className="bg-slate-900 hover:bg-indigo-600 text-white text-xs font-bold px-4 py-2 rounded-xl transition-all">
-        Bid Now
-      </button>
-    </div>
-  </div>
-);
 
-// Wishlist 
+const AuctionRow = ({ item, isFav, onFav, onClick, navigate }) => {
+  const seller = item.createdBy || null;
+
+  return (
+    <div onClick={onClick}
+      className="group flex items-center gap-4 bg-white border border-slate-100 hover:border-indigo-200 hover:shadow-md rounded-2xl p-3 cursor-pointer transition-all duration-200">
+      <div className="relative w-20 h-20 rounded-xl overflow-hidden flex-shrink-0">
+        <img src={item.image?.url} alt={item.title} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" />
+      </div>
+      <div className="flex-1 min-w-0">
+        <p className="text-[10px] font-semibold text-slate-400 uppercase tracking-widest">{item.category}</p>
+        <h3 className="text-sm font-bold text-slate-800 truncate group-hover:text-indigo-700 transition-colors">{item.title}</h3>
+        <div className="flex items-center gap-2 mt-1 flex-wrap">
+          <p className="text-xs text-slate-400">{item.bids?.length || 0} bids</p>
+          {item.condition && item.condition !== "Active" && (
+            <>
+              <span className="text-slate-300">·</span>
+              <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded-md ${
+                item.condition === "New" ? "bg-emerald-50 text-emerald-600" :
+                item.condition === "Used" ? "bg-amber-50 text-amber-600" :
+                "bg-slate-100 text-slate-500"
+              }`}>{item.condition}</span>
+            </>
+          )}
+          {seller && (
+            <>
+              <span className="text-slate-300">·</span>
+              <span className="text-[10px] text-slate-400">by</span>
+              <SellerChip seller={seller} navigate={navigate} />
+            </>
+          )}
+        </div>
+      </div>
+      <div className="text-right flex-shrink-0 hidden sm:block">
+        <p className="text-[10px] text-slate-400">Current Bid</p>
+        <p className="text-sm font-black text-slate-900">{fmt(item.currentBid || item.startingBid || 0)}</p>
+      </div>
+      <div className="text-right flex-shrink-0 hidden md:block w-24">
+        <p className="text-[10px] text-slate-400">Time Left</p>
+        <Countdown endTime={item.endTime} />
+      </div>
+      <div className="flex items-center gap-2 flex-shrink-0">
+        <button onClick={(e) => { e.stopPropagation(); onFav(e, item._id); }}
+          className={`w-8 h-8 rounded-xl flex items-center justify-center transition ${isFav ? "bg-red-50 text-red-500" : "bg-slate-50 text-slate-400 hover:text-red-400"}`}>
+          <Heart size={13} fill={isFav ? "currentColor" : "none"} />
+        </button>
+        <button onClick={(e) => { e.stopPropagation(); onClick(); }}
+          className="bg-slate-900 hover:bg-indigo-600 text-white text-xs font-bold px-4 py-2 rounded-xl transition-all">
+          Bid Now
+        </button>
+      </div>
+    </div>
+  );
+};
+
+// Wishlist Drawer
 const WishlistDrawer = ({ wishlist, open, onClose, onToggleFav, navigate }) => (
   <>
     <aside className={`fixed top-0 right-0 h-full w-[340px] bg-white z-[200] flex flex-col transition-transform duration-300 ease-out shadow-2xl border-l border-slate-100 ${open ? "translate-x-0" : "translate-x-full"}`}>
@@ -204,6 +418,67 @@ const WishlistDrawer = ({ wishlist, open, onClose, onToggleFav, navigate }) => (
   </>
 );
 
+const ProfileDropdown = ({ userName, roles, navigate, onLogout }) => {
+  const [open, setOpen] = useState(false);
+  const roleConfig = getRoleConfig(roles);
+  const RoleIcon = roleConfig.icon;
+
+  return (
+    <div className="relative">
+      <button
+        onClick={() => setOpen((o) => !o)}
+        className="flex items-center gap-2 px-2 py-1 rounded-xl hover:bg-slate-50 transition cursor-pointer border border-transparent hover:border-slate-200"
+      >
+        <div className="w-7 h-7 rounded-full bg-indigo-100 flex items-center justify-center text-indigo-700 font-black text-xs uppercase flex-shrink-0">
+          {userName.charAt(0)}
+        </div>
+        <div className="hidden lg:block leading-none text-left">
+          <p className="text-xs font-bold text-slate-800">{userName}</p>
+          <p className="text-[10px] text-slate-400">{roleConfig.label}</p>
+        </div>
+        <ChevronDown size={12} className={`text-slate-400 hidden lg:block transition-transform duration-200 ${open ? "rotate-180" : ""}`} />
+      </button>
+
+      {open && (
+        <>
+          <div className="fixed inset-0 z-[90]" onClick={() => setOpen(false)} />
+          <div className="absolute right-0 top-full mt-2 w-56 bg-white rounded-2xl border border-slate-200 shadow-xl z-[100] overflow-hidden">
+            <div className="px-4 py-3.5 bg-gradient-to-br from-indigo-50 to-slate-50 border-b border-slate-100">
+              <div className="flex items-center gap-3">
+                <div className="w-9 h-9 rounded-xl bg-indigo-100 flex items-center justify-center text-indigo-700 font-black text-sm uppercase">
+                  {userName.charAt(0)}
+                </div>
+                <div>
+                  <p className="text-xs font-black text-slate-800 leading-tight">{userName}</p>
+                  <span className={`inline-flex items-center gap-1 text-[10px] font-bold px-1.5 py-0.5 rounded-md ${roleConfig.color}`}>
+                    <RoleIcon size={9} />
+                    {roleConfig.label}
+                  </span>
+                </div>
+              </div>
+            </div>
+            <div className="p-1.5">
+              <button
+                onClick={() => { setOpen(false); navigate("/profile"); }}
+                className="w-full flex items-center gap-2.5 px-3 py-2.5 rounded-xl text-xs font-semibold text-slate-700 hover:bg-indigo-50 hover:text-indigo-700 transition"
+              >
+                <User size={13} /> View Profile
+              </button>
+              <div className="h-px bg-slate-100 my-1" />
+              <button
+                onClick={() => { setOpen(false); onLogout(); }}
+                className="w-full flex items-center gap-2.5 px-3 py-2.5 rounded-xl text-xs font-semibold text-red-500 hover:bg-red-50 transition"
+              >
+                <LogOut size={13} /> Log Out
+              </button>
+            </div>
+          </div>
+        </>
+      )}
+    </div>
+  );
+};
+
 const Auction = () => {
   const navigate = useNavigate();
   const [auctions, setAuctions] = useState([]);
@@ -222,14 +497,15 @@ const Auction = () => {
   const [filterOpen, setFilterOpen] = useState(false);
 
   const userData = JSON.parse(sessionStorage.getItem("user"));
-  const userName = userData?.user?.name || userData?.name || "User";
+  const user = userData?.user || userData || {};
+  const userName = user.name || "User";
+  const userRoles = user.roles || ["user"];
 
   useEffect(() => {
     (async () => {
       try {
         setLoading(true);
         const [aRes, wRes] = await Promise.all([api.get("/auctions/all"), api.get("/wishlist")]);
-        // Only show auctions approved by admin
         const all = aRes.data.items || aRes.data || [];
         setAuctions(all.filter((a) => a.approvalStatus === "Approved"));
         setWishlist(wRes.data.wishlist || []);
@@ -276,7 +552,6 @@ const Auction = () => {
       return 0;
     });
 
-  // auctions already filtered to Approved only, so counts are accurate
   const statusCounts = STATUS_TABS.reduce((acc, t) => ({
     ...acc,
     [t.value]: t.value === "All" ? auctions.length : auctions.filter((a) => a.status === t.value).length,
@@ -299,14 +574,12 @@ const Auction = () => {
             <span className="text-sm font-black text-slate-900 tracking-tight hidden sm:block">BidHub</span>
           </div>
 
-          {/* Divider */}
           <div className="w-px h-5 bg-slate-200 hidden md:block" />
 
-          {/* Nav links */}
           <nav className="hidden md:flex items-center gap-0.5 flex-shrink-0">
             {[
-              { label: "Dashboard",     path: "/user-dashboard", active: false },
-              { label: "Live Auctions", path: "/auctions",       active: true  },
+              { label: "Dashboard", path: "/user-dashboard", active: false },
+              { label: "Live Auctions", path: "/auctions", active: true  },
             ].map(({ label, path, active }) => (
               <button key={path} onClick={() => navigate(path)}
                 className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition ${
@@ -348,19 +621,13 @@ const Auction = () => {
               )}
             </button>
             <div className="w-px h-5 bg-slate-200 mx-0.5" />
-            <div className="flex items-center gap-2 px-2 py-1 rounded-lg hover:bg-slate-50 transition cursor-pointer">
-              <div className="w-7 h-7 rounded-full bg-indigo-100 flex items-center justify-center text-indigo-700 font-black text-xs uppercase flex-shrink-0">
-                {userName.charAt(0)}
-              </div>
-              <div className="hidden lg:block leading-none">
-                <p className="text-xs font-bold text-slate-800">{userName}</p>
-                <p className="text-[10px] text-slate-400">Bidder</p>
-              </div>
-            </div>
-            <button onClick={handleLogout}
-              className="w-8 h-8 rounded-lg bg-red-50 border border-red-100 text-red-400 flex items-center justify-center hover:bg-red-500 hover:text-white transition">
-              <LogOut size={13} />
-            </button>
+
+            <ProfileDropdown
+              userName={userName}
+              roles={userRoles}
+              navigate={navigate}
+              onLogout={handleLogout}
+            />
           </div>
 
         </div>
@@ -383,7 +650,6 @@ const Auction = () => {
               </select>
               <ChevronDown size={12} className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
             </div>
-            {/* Filters */}
             <button onClick={() => setFilterOpen(!filterOpen)}
               className={`flex items-center gap-2 text-xs font-bold px-3.5 py-2.5 rounded-xl border transition ${
                 filterOpen || activeFilterCount > 0 ? "bg-indigo-600 text-white border-indigo-600" : "bg-white text-slate-600 border-slate-200 hover:border-slate-300"
@@ -407,14 +673,14 @@ const Auction = () => {
           </div>
         </div>
 
-        {/* Status Tabs  */}
+        {/* Status Tabs */}
         <div className="flex items-center gap-2.5 mb-5 overflow-x-auto pb-1">
           {STATUS_TABS.map(({ label, value, icon: Icon, accent }) => {
             const active = statusTab === value;
             const styles = {
               indigo:  { on: "bg-indigo-600 text-white border-indigo-600",  cnt: "bg-white/20 text-white", off: "bg-white text-slate-600 border-slate-200 hover:border-indigo-300 hover:text-indigo-600" },
               emerald: { on: "bg-emerald-600 text-white border-emerald-600", cnt: "bg-white/20 text-white", off: "bg-white text-slate-600 border-slate-200 hover:border-emerald-300 hover:text-emerald-700" },
-              amber:   { on: "bg-amber-500 text-white border-amber-500",    cnt: "bg-white/20 text-white", off: "bg-white text-slate-600 border-slate-200 hover:border-amber-300 hover:text-amber-600" },
+              amber:   { on: "bg-amber-500 text-white border-amber-500", cnt: "bg-white/20 text-white", off: "bg-white text-slate-600 border-slate-200 hover:border-amber-300 hover:text-amber-600" },
               slate:   { on: "bg-slate-800 text-white border-slate-800",    cnt: "bg-white/20 text-white", off: "bg-white text-slate-600 border-slate-200 hover:border-slate-300 hover:text-slate-800" },
             }[accent];
             return (
@@ -517,7 +783,7 @@ const Auction = () => {
           </div>
         )}
 
-        {/*  Results */}
+        {/* Results */}
         {loading ? (
           <div className="flex flex-col items-center justify-center py-32 gap-3">
             <div className="w-12 h-12 rounded-2xl bg-indigo-600 flex items-center justify-center animate-pulse">
@@ -542,7 +808,9 @@ const Auction = () => {
               <AuctionCard key={item._id} item={item}
                 isFav={wishlist.some((f) => f.auctionItem._id === item._id)}
                 onFav={toggleFav}
-                onClick={() => navigate(`/auction/${item._id}`)} />
+                onClick={() => navigate(`/auction/${item._id}`)}
+                navigate={navigate}
+              />
             ))}
           </div>
         ) : (
@@ -551,7 +819,9 @@ const Auction = () => {
               <AuctionRow key={item._id} item={item}
                 isFav={wishlist.some((f) => f.auctionItem._id === item._id)}
                 onFav={toggleFav}
-                onClick={() => navigate(`/auction/${item._id}`)} />
+                onClick={() => navigate(`/auction/${item._id}`)}
+                navigate={navigate}
+              />
             ))}
           </div>
         )}

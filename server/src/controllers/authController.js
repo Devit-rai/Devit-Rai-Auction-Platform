@@ -1,5 +1,8 @@
+import mongoose from "mongoose";
 import authService from "../services/authService.js";
 import { createJWT } from "../utils/token.js";
+import User from "../models/User.js";
+import { Auction } from "../models/Auction.js";
 
 const signup = async (req, res) => {
   try {
@@ -86,11 +89,7 @@ const resetPassword = async (req, res) => {
     if (newPassword !== confirmPassword)
       return res.status(400).json({ message: "Passwords do not match" });
 
-    const result = await authService.resetPassword(
-      email,
-      code,
-      newPassword
-    );
+    const result = await authService.resetPassword(email, code, newPassword);
 
     res.status(200).json({ success: true, message: result.message });
   } catch (error) {
@@ -106,6 +105,33 @@ const logout = async (req, res) => {
     res.status(200).json({ message: "Logout successful" });
   } catch (error) {
     res.status(500).json({ message: "Logout failed" });
+  }
+};
+
+export const getSellerProfile = async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    if (!mongoose.Types.ObjectId.isValid(id)) {
+      return res.status(400).json({ message: "Invalid seller ID" });
+    }
+
+    const seller = await User.findById(id).select(
+      "name email roles isVerified status createdAt profileImage"
+    );
+
+    if (!seller) {
+      return res.status(404).json({ message: "Seller not found" });
+    }
+
+    const auctions = await Auction.find({
+      createdBy: id,
+      approvalStatus: "Approved",
+    }).sort({ createdAt: -1 });
+
+    res.status(200).json({ seller, auctions });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
   }
 };
 

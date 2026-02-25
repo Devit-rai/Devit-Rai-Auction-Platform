@@ -14,6 +14,7 @@ import auctionRoutes from "./routes/auctionRoutes.js";
 import bidRoutes from "./routes/bidRoutes.js";
 import wishlistRoutes from "./routes/wishlistRoutes.js";
 import adminRoutes from "./routes/adminRoutes.js";
+import reviewRoutes from "./routes/reviewRoutes.js";
 
 dotenv.config();
 const app = express();
@@ -47,6 +48,7 @@ app.use("/api/auctions",auth, auctionRoutes);
 app.use("/api/bids",auth,  bidRoutes(io));
 app.use("/api/wishlist", wishlistRoutes);
 app.use("/api/admin", adminRoutes);
+app.use("/api/reviews", auth, reviewRoutes);
 
 app.get("/", (_req, res) => {
   res.json({ name: process.env.NAME, version: process.env.VERSION, message: "Server is running" });
