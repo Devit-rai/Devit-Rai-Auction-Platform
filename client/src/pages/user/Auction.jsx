@@ -65,10 +65,14 @@ const Countdown = ({ endTime }) => {
   );
 };
 
-// Seller chip with hover popup preview
+// Seller chip with hover popup preview + live review data
 const SellerChip = ({ seller, navigate, className = "" }) => {
   const [hovered, setHovered] = useState(false);
+  const [reviewData, setReviewData] = useState(null);
+  const [reviewLoading, setReviewLoading] = useState(false);
   const leaveTimer = React.useRef(null);
+  const fetchedRef = React.useRef(false);
+
   if (!seller) return null;
 
   const name = seller.name || "Unknown Seller";
@@ -86,11 +90,27 @@ const SellerChip = ({ seller, navigate, className = "" }) => {
   const handleMouseEnter = () => {
     clearTimeout(leaveTimer.current);
     setHovered(true);
+    // Fetch reviews once on first hover
+    if (!fetchedRef.current && seller._id) {
+      fetchedRef.current = true;
+      setReviewLoading(true);
+      api.get(`/reviews/${seller._id}`)
+        .then((res) => setReviewData({ avg: res.data.avgRating, total: res.data.total }))
+        .catch(() => setReviewData({ avg: 0, total: 0 }))
+        .finally(() => setReviewLoading(false));
+    }
   };
 
   const handleMouseLeave = () => {
-    leaveTimer.current = setTimeout(() => setHovered(false), 120);
+    leaveTimer.current = setTimeout(() => setHovered(false), 150);
   };
+
+  // Render stars inline
+  const renderStars = (rating) =>
+    [1, 2, 3, 4, 5].map((s) => (
+      <Star key={s} size={10}
+        className={s <= Math.round(rating) ? "text-amber-400 fill-amber-400" : "text-slate-200 fill-slate-200"} />
+    ));
 
   return (
     <div
@@ -118,7 +138,7 @@ const SellerChip = ({ seller, navigate, className = "" }) => {
       {hovered && (
         <div
           onClick={(e) => e.stopPropagation()}
-          className="absolute bottom-full left-0 mb-2 z-[300] w-56 bg-white rounded-2xl border border-slate-200 shadow-2xl overflow-hidden"
+          className="absolute bottom-full left-0 mb-2 z-[300] w-64 bg-white rounded-2xl border border-slate-200 shadow-2xl overflow-hidden"
           style={{ animation: "fadeSlideUp 0.15s ease-out" }}
         >
           <style>{`
@@ -128,38 +148,66 @@ const SellerChip = ({ seller, navigate, className = "" }) => {
             }
           `}</style>
 
-          {/* Banner */}
-          <div className="h-10 bg-gradient-to-br from-indigo-500 to-violet-600 relative">
-            <div className="absolute inset-0 opacity-20"
-              style={{ backgroundImage: "radial-gradient(circle at 30% 50%, white 1px, transparent 1px)", backgroundSize: "12px 12px" }} />
-          </div>
-
-          <div className="px-4 pb-4">
-            {/* Avatar overlapping banner */}
- 
-              <div className="w-10 h-10 rounded-xl bg-white border-2 border-white shadow-md flex items-center justify-center overflow-hidden">
+          <div className="px-4 pt-4 pb-4">
+            {/* Avatar + verified */}
+            <div className="mb-3 flex items-center justify-between">
+              <div className="w-10 h-10 rounded-xl bg-indigo-100 border border-indigo-200 shadow-sm flex items-center justify-center overflow-hidden">
+                {avatar ? (
+                  <img src={avatar} alt={name} className="w-full h-full object-cover" />
+                ) : (
                   <div className="w-full h-full bg-indigo-600 flex items-center justify-center text-white font-black text-sm">
                     {initial}
                   </div>
-                
-                {seller.isVerified && (
-                  <span className="inline-flex items-center gap-1 text-[10px] font-bold text-indigo-600 bg-indigo-50 border border-indigo-100 px-2 py-0.5 rounded-full">
-                    <BadgeCheck size={9} /> Verified
-                  </span>
+                )}
+              </div>
+              {seller.isVerified && (
+                <span className="inline-flex items-center gap-1 text-[10px] font-bold text-indigo-600 bg-indigo-50 border border-indigo-100 px-2 py-0.5 rounded-full">
+                  <BadgeCheck size={9} /> Verified
+                </span>
               )}
             </div>
 
+            {/* Name + email */}
             <p className="text-sm font-black text-slate-800 leading-tight">{name}</p>
             <p className="text-[11px] text-slate-400 mt-0.5 truncate">{seller.email}</p>
 
             {memberSince && (
-              <p className="text-[10px] text-slate-400 mt-1.5 flex items-center gap-1">
-                <Star size={9} className="text-amber-400" />
+              <p className="text-[10px] text-slate-400 mt-1 flex items-center gap-1">
+                <Star size={9} className="text-slate-300" />
                 Member since {memberSince}
               </p>
             )}
 
-            <div className="h-px bg-slate-100 my-3" />
+            {/* ── Review section ── */}
+            <div className="mt-3 pt-3 border-t border-slate-100">
+              {reviewLoading ? (
+                <div className="flex items-center gap-2">
+                  <div className="w-3 h-3 rounded-full border border-indigo-300 border-t-indigo-600 animate-spin" />
+                  <span className="text-[11px] text-slate-400">Loading reviews...</span>
+                </div>
+              ) : reviewData && reviewData.total > 0 ? (
+                <div className="flex items-center justify-between">
+                  <div>
+                    <div className="flex items-center gap-1 mb-0.5">
+                      {renderStars(reviewData.avg)}
+                      <span className="text-xs font-black text-amber-600 ml-1">{reviewData.avg}</span>
+                    </div>
+                    <p className="text-[10px] text-slate-400">{reviewData.total} review{reviewData.total !== 1 ? "s" : ""}</p>
+                  </div>
+                  <div className="bg-amber-50 border border-amber-100 rounded-xl px-2.5 py-1.5 text-center">
+                    <p className="text-base font-black text-amber-600 leading-none">{reviewData.avg}</p>
+                    <p className="text-[9px] text-amber-400 font-medium">/ 5</p>
+                  </div>
+                </div>
+              ) : (
+                <div className="flex items-center gap-1.5">
+                  <div className="flex gap-0.5">{renderStars(0)}</div>
+                  <p className="text-[11px] text-slate-400">No reviews yet</p>
+                </div>
+              )}
+            </div>
+
+            <div className="h-px bg-slate-100 mt-3 mb-3" />
 
             <button
               onClick={handleClick}
