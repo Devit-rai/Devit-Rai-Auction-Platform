@@ -8,6 +8,7 @@ import {
   getAllAuctions,
   updateAuctionApproval,
   forceCloseAuction,
+  getAuctionDetails,
 } from "../controllers/adminController.js";
 
 const router = express.Router();
@@ -21,6 +22,7 @@ router.put("/users/:id/status", updateUserStatus);
 
 /* Auction Management */
 router.get("/auctions", getAllAuctions);
+router.get("/auctions/:id", getAuctionDetails); 
 router.put("/auctions/:id/approval", updateAuctionApproval);
 router.put("/auctions/:id/force-close", forceCloseAuction);
 

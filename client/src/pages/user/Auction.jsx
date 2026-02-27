@@ -26,7 +26,7 @@ const getTimeRemaining = (endTime) => {
 };
 
 const CATEGORIES = ["All", "Art", "Electronics", "Vehicles", "Fashion", "Jewelry", "Furniture", "Sports"];
-const CONDITIONS = ["All", "New", "Used", "Refurbished"];
+const CONDITIONS = ["All", "New", "Used"];
 const SORT_OPTIONS = [
   { label: "Ending Soon", value: "ending" },
   { label: "Newest Listed", value: "newest" },
@@ -65,7 +65,6 @@ const Countdown = ({ endTime }) => {
   );
 };
 
-// Seller chip with hover popup preview + live review data
 const SellerChip = ({ seller, navigate, className = "" }) => {
   const [hovered, setHovered] = useState(false);
   const [reviewData, setReviewData] = useState(null);
@@ -90,7 +89,6 @@ const SellerChip = ({ seller, navigate, className = "" }) => {
   const handleMouseEnter = () => {
     clearTimeout(leaveTimer.current);
     setHovered(true);
-    // Fetch reviews once on first hover
     if (!fetchedRef.current && seller._id) {
       fetchedRef.current = true;
       setReviewLoading(true);
@@ -105,7 +103,6 @@ const SellerChip = ({ seller, navigate, className = "" }) => {
     leaveTimer.current = setTimeout(() => setHovered(false), 150);
   };
 
-  // Render stars inline
   const renderStars = (rating) =>
     [1, 2, 3, 4, 5].map((s) => (
       <Star key={s} size={10}
@@ -118,7 +115,6 @@ const SellerChip = ({ seller, navigate, className = "" }) => {
       onMouseEnter={handleMouseEnter}
       onMouseLeave={handleMouseLeave}
     >
-      {/* Chip trigger */}
       <button onClick={handleClick} className="flex items-center gap-1.5 group/seller transition">
         {avatar ? (
           <img src={avatar} alt={name}
@@ -149,7 +145,6 @@ const SellerChip = ({ seller, navigate, className = "" }) => {
           `}</style>
 
           <div className="px-4 pt-4 pb-4">
-            {/* Avatar + verified */}
             <div className="mb-3 flex items-center justify-between">
               <div className="w-10 h-10 rounded-xl bg-indigo-100 border border-indigo-200 shadow-sm flex items-center justify-center overflow-hidden">
                 {avatar ? (
@@ -167,7 +162,6 @@ const SellerChip = ({ seller, navigate, className = "" }) => {
               )}
             </div>
 
-            {/* Name + email */}
             <p className="text-sm font-black text-slate-800 leading-tight">{name}</p>
             <p className="text-[11px] text-slate-400 mt-0.5 truncate">{seller.email}</p>
 
@@ -178,7 +172,6 @@ const SellerChip = ({ seller, navigate, className = "" }) => {
               </p>
             )}
 
-            {/* ── Review section ── */}
             <div className="mt-3 pt-3 border-t border-slate-100">
               {reviewLoading ? (
                 <div className="flex items-center gap-2">
@@ -261,7 +254,7 @@ const AuctionCard = ({ item, isFav, onFav, onClick, navigate }) => {
           <Heart size={13} fill={isFav ? "currentColor" : "none"} strokeWidth={2} />
         </button>
 
-        {/* Bid count on hover */}
+        {/* Bid count*/}
         <div className="absolute bottom-3 left-3 opacity-0 group-hover:opacity-100 transition-opacity">
           <span className="bg-black/60 backdrop-blur-sm text-white text-[10px] font-semibold px-2 py-1 rounded-full">
             {item.bids?.length || 0} bids
@@ -270,7 +263,6 @@ const AuctionCard = ({ item, isFav, onFav, onClick, navigate }) => {
       </div>
 
       <div className="p-4 flex flex-col flex-1">
-        {/* Category + condition row */}
         <div className="flex items-center justify-between mb-1">
           <p className="text-[10px] font-semibold text-slate-400 uppercase tracking-widest">{item.category}</p>
           {item.condition && item.condition !== "Active" && (

@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import './App.css'
+import { Toaster } from "react-hot-toast";
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom'
 import Signup from './pages/auth/Signup'
 import Verify from './pages/auth/Verify'
@@ -21,6 +22,7 @@ function App() {
 
   return (
     <>
+      <Toaster position="top-right" reverseOrder={false} />
       <Router>
         <Routes>
           <Route path="/" element={<Landing />} />

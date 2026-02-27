@@ -37,7 +37,6 @@ const placeBid = (io) => async (req, res) => {
       });
     }
 
-    /* Double check using time (important for real systems) */
     if (now < auctionItem.startTime || now >= auctionItem.endTime) {
       return res.status(400).json({
         message: "Auction is not currently active",
@@ -113,6 +112,12 @@ const placeBid = (io) => async (req, res) => {
       auctionId: auctionItem._id,
       currentBid: amount,
       newBid: latestBid,
+    });
+    io.emit("newBidPlaced", {
+      auctionId: auctionItem._id,
+      amount,
+      userId: req.user._id,
+      userName: req.user.name,
     });
 
     res.status(201).json({

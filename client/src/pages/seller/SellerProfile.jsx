@@ -4,11 +4,11 @@ import api from "../../api/axios";
 import {
   Gavel, ArrowLeft, Clock, Zap, Mail, ShieldCheck,
   BadgeCheck, TrendingUp, Package, ChevronRight,
-  LayoutGrid, List, ArrowUpRight, Star, Trash2,
-  MessageSquare, AlertCircle, CheckCircle, ChevronDown,
-  CalendarDays, Award, BarChart2, User,
+  LayoutGrid, List, ArrowUpRight, Star, ChevronDown,
+  CalendarDays,
 } from "lucide-react";
 import { toast } from "react-hot-toast";
+import Review from "../review/Review";
 
 const fmt = (n) => "NPR\u00A0" + Number(n).toLocaleString();
 
@@ -50,185 +50,6 @@ const StatusPill = ({ status, endTime }) => {
   if (status === "Live")
     return <span className="inline-flex items-center gap-1 bg-emerald-50 text-emerald-600 text-[10px] font-bold px-2 py-0.5 rounded-full"><span className="w-1.5 h-1.5 rounded-full bg-emerald-400" />Live</span>;
   return <span className="inline-flex items-center gap-1 bg-amber-50 text-amber-600 text-[10px] font-bold px-2 py-0.5 rounded-full">Upcoming</span>;
-};
-
-/* Star Display (read-only)*/
-const StarDisplay = ({ rating, size = 14 }) => (
-  <div className="flex items-center gap-0.5">
-    {[1, 2, 3, 4, 5].map((s) => (
-      <Star key={s} size={size}
-        className={s <= Math.round(rating) ? "text-amber-400 fill-amber-400" : "text-slate-200 fill-slate-200"} />
-    ))}
-  </div>
-);
-
-/* Star Picker */
-const StarPicker = ({ value, onChange }) => {
-  const [hovered, setHovered] = useState(0);
-  const labels = ["", "Poor", "Fair", "Good", "Very Good", "Excellent"];
-  return (
-    <div className="flex items-center gap-1.5">
-      {[1, 2, 3, 4, 5].map((s) => (
-        <button key={s} type="button"
-          onClick={() => onChange(s)}
-          onMouseEnter={() => setHovered(s)}
-          onMouseLeave={() => setHovered(0)}
-          className="transition-transform hover:scale-110 active:scale-95">
-          <Star size={32}
-            className={s <= (hovered || value)
-              ? "text-amber-400 fill-amber-400 drop-shadow-sm"
-              : "text-slate-300 fill-slate-100"} />
-        </button>
-      ))}
-      {(hovered || value) > 0 && (
-        <span className={`ml-1 text-xs font-bold px-2 py-1 rounded-lg ${
-          (hovered || value) >= 4 ? "bg-emerald-50 text-emerald-600" :
-          (hovered || value) === 3 ? "bg-amber-50 text-amber-600" :
-          "bg-red-50 text-red-500"
-        }`}>
-          {labels[hovered || value]}
-        </span>
-      )}
-    </div>
-  );
-};
-
-/* Rating Summary Bar Chart */
-const RatingSummary = ({ avgRating, total, breakdown }) => (
-  <div className="bg-white rounded-2xl border border-slate-100 p-6">
-    <h3 className="text-sm font-black text-slate-700 mb-5 flex items-center gap-2">
-      <BarChart2 size={15} className="text-indigo-500" /> Rating Overview
-    </h3>
-    <div className="flex items-center gap-8">
-      {/* Big number */}
-      <div className="text-center flex-shrink-0 bg-slate-50 rounded-2xl px-6 py-5 border border-slate-100">
-        <p className="text-5xl font-black text-slate-900 leading-none">{avgRating}</p>
-        <div className="mt-2.5 flex justify-center"><StarDisplay rating={avgRating} size={15} /></div>
-        <p className="text-[11px] text-slate-400 mt-2 font-medium">{total} review{total !== 1 ? "s" : ""}</p>
-      </div>
-      {/* Breakdown bars */}
-      <div className="flex-1 space-y-2.5">
-        {breakdown.map(({ star, count, percent }) => (
-          <div key={star} className="flex items-center gap-3">
-            <span className="text-xs font-bold text-slate-500 w-3 text-right flex-shrink-0">{star}</span>
-            <Star size={10} className="text-amber-400 fill-amber-400 flex-shrink-0" />
-            <div className="flex-1 h-2 bg-slate-100 rounded-full overflow-hidden">
-              <div className="h-full bg-gradient-to-r from-amber-400 to-amber-300 rounded-full transition-all duration-700"
-                style={{ width: `${percent}%` }} />
-            </div>
-            <span className="text-[11px] text-slate-400 w-5 text-right flex-shrink-0 font-medium">{count}</span>
-          </div>
-        ))}
-      </div>
-    </div>
-  </div>
-);
-
-const ReviewCard = ({ review, currentUserId, onDelete }) => {
-  const isOwn = review.reviewer._id === currentUserId;
-  const name = review.reviewer.name || "Anonymous";
-  const initial = name.charAt(0).toUpperCase();
-  const avatar = review.reviewer.profileImage?.url || review.reviewer.profileImage || null;
-  const date = new Date(review.createdAt).toLocaleDateString("en-US", {
-    day: "numeric", month: "short", year: "numeric",
-  });
-  return (
-    <div className={`bg-white rounded-2xl border p-5 transition-all ${isOwn ? "border-indigo-200 bg-indigo-50/20" : "border-slate-100 hover:border-slate-200 hover:shadow-sm"}`}>
-      <div className="flex items-start justify-between gap-3">
-        <div className="flex items-center gap-3">
-          {avatar ? (
-            <img src={avatar} alt={name} className="w-10 h-10 rounded-xl object-cover flex-shrink-0 ring-1 ring-slate-200" />
-          ) : (
-            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-indigo-400 to-indigo-600 flex items-center justify-center text-white font-black text-sm flex-shrink-0 shadow-sm">
-              {initial}
-            </div>
-          )}
-          <div>
-            <div className="flex items-center gap-2">
-              <p className="text-sm font-bold text-slate-800 leading-tight">{name}</p>
-              {isOwn && <span className="text-[9px] font-black bg-indigo-100 text-indigo-600 px-1.5 py-0.5 rounded-md">You</span>}
-            </div>
-            <p className="text-[11px] text-slate-400 mt-0.5">{date}</p>
-          </div>
-        </div>
-        <div className="flex items-center gap-2 flex-shrink-0">
-          <div className="flex items-center gap-1.5 bg-amber-50 border border-amber-100 px-2.5 py-1.5 rounded-xl">
-            <StarDisplay rating={review.rating} size={11} />
-            <span className="text-xs font-black text-amber-600 ml-0.5">{review.rating}</span>
-          </div>
-          {isOwn && (
-            <button onClick={() => onDelete(review._id)}
-              className="w-8 h-8 rounded-xl bg-red-50 hover:bg-red-100 text-red-400 hover:text-red-600 flex items-center justify-center transition border border-red-100"
-              title="Delete your review">
-              <Trash2 size={12} />
-            </button>
-          )}
-        </div>
-      </div>
-      <p className="text-sm text-slate-600 mt-3 leading-relaxed pl-[52px]">{review.comment}</p>
-    </div>
-  );
-};
-
-const ReviewForm = ({ sellerId, onSuccess }) => {
-  const [rating, setRating] = useState(0);
-  const [comment, setComment] = useState("");
-  const [submitting, setSubmitting] = useState(false);
-
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    if (rating === 0) return toast.error("Please select a star rating");
-    if (!comment.trim()) return toast.error("Please write a comment");
-    try {
-      setSubmitting(true);
-      const res = await api.post(`/reviews/${sellerId}`, { rating, comment });
-      toast.success("Review submitted!");
-      setRating(0);
-      setComment("");
-      onSuccess(res.data.review);
-    } catch (err) {
-      toast.error(err.response?.data?.message || "Failed to submit review");
-    } finally {
-      setSubmitting(false);
-    }
-  };
-
-  return (
-    <form onSubmit={handleSubmit} className="bg-gradient-to-br from-indigo-50 to-slate-50 rounded-2xl border border-indigo-100 p-6">
-      <h3 className="text-sm font-black text-slate-800 mb-5 flex items-center gap-2">
-        <MessageSquare size={15} className="text-indigo-500" /> Share Your Experience
-      </h3>
-
-      {/* Star picker */}
-      <div className="mb-5">
-        <p className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-3">Your Rating</p>
-        <StarPicker value={rating} onChange={setRating} />
-      </div>
-
-      {/* Comment box */}
-      <div className="mb-5">
-        <p className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Your Review</p>
-        <textarea
-          value={comment}
-          onChange={(e) => setComment(e.target.value)}
-          maxLength={500} rows={4}
-          placeholder="How was your experience with this seller? Was the item as described? Was communication good?"
-          className="w-full text-sm text-slate-700 bg-white border border-slate-200 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-400 transition resize-none shadow-sm"
-        />
-        <div className="flex items-center justify-between mt-1.5">
-          <span className="text-[10px] text-slate-400">Be honest and helpful to other bidders</span>
-          <span className={`text-[10px] font-bold ${comment.length > 450 ? "text-amber-500" : "text-slate-400"}`}>{comment.length}/500</span>
-        </div>
-      </div>
-
-      <button type="submit" disabled={submitting}
-        className="w-full bg-indigo-600 hover:bg-indigo-700 disabled:opacity-60 disabled:cursor-not-allowed text-white text-sm font-bold py-3 rounded-xl transition flex items-center justify-center gap-2 shadow-sm shadow-indigo-200">
-        {submitting
-          ? <><span className="w-4 h-4 border-2 border-white/40 border-t-white rounded-full animate-spin" /> Submitting...</>
-          : <><Star size={14} /> Publish Review</>}
-      </button>
-    </form>
-  );
 };
 
 const ListingsAccordion = ({ auctions, navigate }) => {
@@ -285,7 +106,6 @@ const ListingsAccordion = ({ auctions, navigate }) => {
                 </button>
               ))}
             </div>
-            {/* View toggle */}
             <div className="flex items-center bg-slate-50 border border-slate-200 rounded-xl p-1 gap-0.5">
               <button onClick={() => setViewMode("grid")}
                 className={`w-8 h-8 rounded-lg flex items-center justify-center transition ${viewMode === "grid" ? "bg-white text-slate-900 shadow-sm" : "text-slate-400 hover:text-slate-600"}`}>
@@ -398,12 +218,7 @@ const SellerProfile = () => {
   const [seller, setSeller] = useState(null);
   const [auctions, setAuctions] = useState([]);
   const [loading, setLoading] = useState(true);
-
-  const [reviews, setReviews] = useState([]);
   const [reviewStats, setReviewStats] = useState({ avgRating: 0, total: 0, breakdown: [] });
-  const [reviewsLoading, setReviewsLoading] = useState(true);
-  const [canLeaveReview, setCanLeaveReview] = useState(true);
-  const [cantReason, setCantReason] = useState("");
 
   useEffect(() => {
     (async () => {
@@ -419,70 +234,6 @@ const SellerProfile = () => {
       }
     })();
   }, [id]);
-
-  useEffect(() => {
-    (async () => {
-      try {
-        setReviewsLoading(true);
-        const reviewRes = await api.get(`/reviews/${id}`);
-        setReviews(reviewRes.data.reviews || []);
-        setReviewStats({
-          avgRating: reviewRes.data.avgRating,
-          total: reviewRes.data.total,
-          breakdown: reviewRes.data.breakdown || [],
-        });
-      } catch (err) {
-        toast.error("Failed to load reviews");
-      } finally {
-        setReviewsLoading(false);
-      }
-
-
-      try {
-        const eligRes = await api.get(`/reviews/${id}/can-review`);
-        setCanLeaveReview(eligRes.data.canReview);
-        setCantReason(eligRes.data.reason || "");
-      } catch (err) {
-        setCanLeaveReview(true);
-      }
-    })();
-  }, [id]);
-
-  const recalcStats = (updatedReviews) => {
-    const total = updatedReviews.length;
-    const avg = total > 0 ? updatedReviews.reduce((s, r) => s + r.rating, 0) / total : 0;
-    setReviewStats({
-      avgRating: parseFloat(avg.toFixed(1)),
-      total,
-      breakdown: [5, 4, 3, 2, 1].map((star) => {
-        const count = updatedReviews.filter((r) => r.rating === star).length;
-        return { star, count, percent: total > 0 ? Math.round((count / total) * 100) : 0 };
-      }),
-    });
-  };
-
-  const handleReviewAdded = (newReview) => {
-    const updated = [newReview, ...reviews];
-    setReviews(updated);
-    setCanLeaveReview(false);
-    setCantReason("already_reviewed");
-    recalcStats(updated);
-  };
-
-  const handleDeleteReview = async (reviewId) => {
-    if (!window.confirm("Delete your review?")) return;
-    try {
-      await api.delete(`/reviews/${reviewId}`);
-      const updated = reviews.filter((r) => r._id !== reviewId);
-      setReviews(updated);
-      setCanLeaveReview(true);
-      setCantReason("");
-      recalcStats(updated);
-      toast.success("Review deleted");
-    } catch {
-      toast.error("Failed to delete review");
-    }
-  };
 
   const liveCount = auctions.filter((a) => a.status === "Live").length;
   const endedCount = auctions.filter((a) => a.status === "Ended").length;
@@ -517,7 +268,6 @@ const SellerProfile = () => {
 
   return (
     <div className="min-h-screen bg-[#F4F5F7] font-sans">
-
       <header className="bg-white border-b border-slate-200 sticky top-0 z-50">
         <div className="max-w-screen-xl mx-auto px-6 h-14 flex items-center gap-3">
           <div onClick={() => navigate("/user-dashboard")} className="flex items-center gap-2 cursor-pointer flex-shrink-0">
@@ -541,16 +291,13 @@ const SellerProfile = () => {
       <div className="max-w-screen-xl mx-auto px-6 py-8">
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
 
-          {/* Seller Details ── */}
           <div className="lg:col-span-1 space-y-4">
-
             <div className="bg-white rounded-3xl border border-slate-100 overflow-hidden shadow-sm">
               <div className="h-24 bg-gradient-to-br from-indigo-500 via-indigo-600 to-violet-600 relative">
                 <div className="absolute inset-0 opacity-20"
                   style={{ backgroundImage: "radial-gradient(circle at 20% 50%, white 1px, transparent 1px)", backgroundSize: "28px 28px" }} />
               </div>
               <div className="px-5 pb-5">
-                {/* Avatar */}
                 <div className="-mt-8 mb-4 flex items-end justify-between">
                   <div className="relative">
                     <div className="w-16 h-16 rounded-2xl bg-white shadow-lg border-[3px] border-white flex items-center justify-center overflow-hidden">
@@ -582,7 +329,6 @@ const SellerProfile = () => {
                   <TrendingUp size={10} /> Seller
                 </span>
 
-                {/* Info rows */}
                 <div className="space-y-2.5 mt-3">
                   <div className="flex items-center gap-2.5 text-xs text-slate-500">
                     <div className="w-7 h-7 rounded-lg bg-slate-50 border border-slate-200 flex items-center justify-center flex-shrink-0">
@@ -606,7 +352,6 @@ const SellerProfile = () => {
               </div>
             </div>
 
-            {/* Stats card */}
             <div className="bg-white rounded-2xl border border-slate-100 p-5 shadow-sm">
               <h3 className="text-xs font-black text-slate-400 uppercase tracking-widest mb-4">Seller Stats</h3>
               <div className="grid grid-cols-2 gap-3">
@@ -626,14 +371,18 @@ const SellerProfile = () => {
               </div>
             </div>
 
-            {/* Rating summary card */}
+            {/* Rating summary card*/}
             {reviewStats.total > 0 && (
               <div className="bg-white rounded-2xl border border-slate-100 p-5 shadow-sm">
                 <h3 className="text-xs font-black text-slate-400 uppercase tracking-widest mb-4">Rating Summary</h3>
                 <div className="flex items-center gap-3 mb-4">
                   <div className="bg-amber-50 border border-amber-100 rounded-xl px-4 py-3 text-center flex-shrink-0">
                     <p className="text-3xl font-black text-amber-600 leading-none">{reviewStats.avgRating}</p>
-                    <div className="mt-1.5 flex justify-center"><StarDisplay rating={reviewStats.avgRating} size={12} /></div>
+                    <div className="mt-1.5 flex justify-center gap-0.5">
+                      {[1,2,3,4,5].map((s) => (
+                        <Star key={s} size={10} className={s <= Math.round(reviewStats.avgRating) ? "text-amber-400 fill-amber-400" : "text-slate-200 fill-slate-200"} />
+                      ))}
+                    </div>
                   </div>
                   <div className="flex-1 space-y-1.5">
                     {reviewStats.breakdown.map(({ star, count, percent }) => (
@@ -653,62 +402,15 @@ const SellerProfile = () => {
             )}
           </div>
 
-          {/* Reviews + Listings */}
+          {/* Right content */}
           <div className="lg:col-span-2 space-y-5">
-
-            {/* Reviews section header */}
-            <div className="flex items-center justify-between">
-              <div>
-                <h2 className="text-lg font-black text-slate-900">Reviews</h2>
-                <p className="text-xs text-slate-400 mt-0.5">
-                  {reviewStats.total > 0
-                    ? `${reviewStats.total} review${reviewStats.total !== 1 ? "s" : ""} · ${reviewStats.avgRating} avg`
-                    : "No reviews yet"}
-                </p>
-              </div>
-              {reviewStats.total > 0 && (
-                <div className="flex items-center gap-1.5 bg-amber-50 border border-amber-200 px-3 py-1.5 rounded-xl">
-                  <Star size={13} className="text-amber-400 fill-amber-400" />
-                  <span className="text-sm font-black text-amber-700">{reviewStats.avgRating}</span>
-                </div>
-              )}
-            </div>
-
-            {/* Write review form or notice */}
-            {currentUserId !== id && (
-              canLeaveReview ? (
-                <ReviewForm sellerId={id} onSuccess={handleReviewAdded} />
-              ) : cantReason === "already_reviewed" ? (
-                <div className="flex items-start gap-3 p-4 rounded-2xl border text-sm bg-emerald-50 border-emerald-200 text-emerald-700">
-                  <CheckCircle size={16} className="flex-shrink-0 mt-0.5" />
-                  <p><span className="font-bold">You've already reviewed this seller.</span> Delete your review below to write a new one.</p>
-                </div>
-              ) : null
-            )}
-
-            {/* Reviews list */}
-            {reviewsLoading ? (
-              <div className="flex items-center justify-center py-16">
-                <div className="w-8 h-8 border-2 border-indigo-200 border-t-indigo-600 rounded-full animate-spin" />
-              </div>
-            ) : reviews.length === 0 ? (
-              <div className="flex flex-col items-center justify-center py-16 bg-white rounded-2xl border border-dashed border-slate-200">
-                <div className="w-12 h-12 bg-slate-100 rounded-2xl flex items-center justify-center mb-3">
-                  <MessageSquare size={20} className="text-slate-300" />
-                </div>
-                <p className="text-sm font-black text-slate-700">No reviews yet</p>
-                <p className="text-xs text-slate-400 mt-1">Be the first to review this seller.</p>
-              </div>
-            ) : (
-              <div className="space-y-3">
-                {reviews.map((review) => (
-                  <ReviewCard key={review._id} review={review}
-                    currentUserId={currentUserId} onDelete={handleDeleteReview} />
-                ))}
-              </div>
-            )}
+            {/* Review handles all review logic */}
+            <Review
+              sellerId={id}
+              currentUserId={currentUserId}
+              onStatsChange={setReviewStats}
+            />
             <ListingsAccordion auctions={auctions} navigate={navigate} />
-
           </div>
         </div>
       </div>

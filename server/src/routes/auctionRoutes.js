@@ -4,6 +4,8 @@ import {
   getAllItems,
   getAuctionDetails,
   removeFromAuction,
+  updateAuctionItem,
+  republishItem
 } from "../controllers/auctionController.js";
 
 import auth from "../middlewares/auth.js";
@@ -16,7 +18,8 @@ router.get("/all", auth, getAllItems);
 router.get("/:id",auth, getAuctionDetails);
 
 router.post("/new", auth, roleBasedAuth(SELLER), addNewAuctionItem);
-router.delete("/:id", auth, removeFromAuction);
-// router.put("/republish/:id", auth, republishItem);
+router.delete("/:id", auth, roleBasedAuth(SELLER), removeFromAuction);
+router.put("/:id", auth, roleBasedAuth(SELLER), updateAuctionItem);
+router.put("/republish/:id", auth, republishItem);
 
 export default router;

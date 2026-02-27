@@ -12,10 +12,10 @@ import { toast } from "react-hot-toast";
 
 const StatCard = ({ icon: Icon, label, value, accent }) => {
   const styles = {
-    rose:    "bg-rose-50 border-rose-100 text-rose-600",
+    rose: "bg-rose-50 border-rose-100 text-rose-600",
     emerald: "bg-emerald-50 border-emerald-100 text-emerald-600",
-    indigo:  "bg-indigo-50 border-indigo-100 text-indigo-600",
-    amber:   "bg-amber-50 border-amber-100 text-amber-600",
+    indigo: "bg-indigo-50 border-indigo-100 text-indigo-600",
+    amber: "bg-amber-50 border-amber-100 text-amber-600",
   };
   return (
     <div className={`rounded-2xl border p-5 flex items-center gap-4 ${styles[accent]}`}>
@@ -55,7 +55,7 @@ const Profile = () => {
 
   const [form, setForm] = useState({ name: "" });
   const [saving, setSaving] = useState(false);
-  const [savedItems, setSavedItems]   = useState(0);
+  const [savedItems, setSavedItems] = useState(0);
   const [wonAuctions, setWonAuctions] = useState(0);
 
   useEffect(() => { loadProfile(); }, []);
@@ -116,17 +116,17 @@ const Profile = () => {
   const name = profile?.name || sessionUser.name || "User";
   const email = profile?.email || sessionUser.email || "";
   const verified  = profile?.isVerified ?? false;
-  const status = profile?.status     || "Active";
+  const status = profile?.status || "Active";
   const memberSince = profile?.createdAt
     ? new Date(profile.createdAt).toLocaleDateString("en-US", { month: "long", year: "numeric" })
     : "—";
-  const roles     = profile?.roles || sessionUser.roles || ["user"];
+  const roles = profile?.roles || sessionUser.roles || ["user"];
   const isSeller  = roles.includes("seller") || roles.includes("Seller");
   const roleLabel = isSeller ? "Seller" : "Bidder";
 
   const TABS = [
-    { id: "overview", icon: User,  label: "Overview" },
-    { id: "edit",     icon: Edit3, label: "Edit Profile" },
+    { id: "overview", icon: User, label: "Overview" },
+    { id: "edit", icon: Edit3, label: "Edit Profile" },
   ];
 
   if (loading) {
@@ -168,7 +168,6 @@ const Profile = () => {
 
           <aside className="space-y-4">
 
-            {/* Profile card */}
             <div className="bg-white rounded-2xl border border-slate-100 shadow-sm">
               <div className="px-5 pt-6 pb-5">
                 <div className="flex items-center gap-4 mb-4">
@@ -215,7 +214,6 @@ const Profile = () => {
               </div>
             </div>
 
-            {/* Tab nav */}
             <div className="bg-white rounded-2xl border border-slate-100 p-2 shadow-sm">
               {TABS.map(({ id, icon: Icon, label }) => (
                 <button key={id} onClick={() => setActiveTab(id)}
@@ -245,10 +243,9 @@ const Profile = () => {
 
             {activeTab === "overview" && (
               <>
-                {/* Stats */}
                 <div className="grid grid-cols-2 gap-4">
-                  <StatCard icon={Heart}        label="Saved Items"   value={savedItems} accent="rose" />
-                  <StatCard icon={CheckCircle}  label="Won Auctions"  value={wonAuctions} accent="emerald" />
+                  <StatCard icon={Heart} label="Saved Items" value={savedItems} accent="rose" />
+                  <StatCard icon={CheckCircle} label="Won Auctions" value={wonAuctions} accent="emerald" />
                 </div>
 
                 {/* Account Info */}
@@ -264,12 +261,12 @@ const Profile = () => {
                 >
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                     {[
-                      { label: "Full Name",     value: name },
+                      { label: "Full Name", value: name },
                       { label: "Email Address", value: email },
-                      { label: "Account Role",  value: roleLabel },
-                      { label: "Member Since",  value: memberSince },
-                      { label: "Verification",  value: verified ? "Verified ✓" : "Not verified" },
-                      { label: "Status",        value: status },
+                      { label: "Account Role", value: roleLabel },
+                      { label: "Member Since", value: memberSince },
+                      { label: "Verification", value: verified ? "Verified ✓" : "Not verified" },
+                      { label: "Status", value: status },
                     ].map(({ label, value }) => (
                       <div key={label} className="bg-slate-50 rounded-xl p-3.5 border border-slate-100">
                         <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">{label}</p>
@@ -299,13 +296,6 @@ const Profile = () => {
                     </div>
                     <div className="flex items-center justify-between p-3.5 bg-slate-50 rounded-xl border border-slate-100">
                       <div className="flex items-center gap-2.5">
-                        <Shield size={14} className="text-slate-400" />
-                        <span className="text-xs font-semibold text-slate-600">Two-Factor Auth</span>
-                      </div>
-                      <span className="text-[10px] font-bold text-slate-400 bg-slate-100 px-2 py-0.5 rounded-full">Coming Soon</span>
-                    </div>
-                    <div className="flex items-center justify-between p-3.5 bg-slate-50 rounded-xl border border-slate-100">
-                      <div className="flex items-center gap-2.5">
                         <Sparkles size={14} className="text-slate-400" />
                         <span className="text-xs font-semibold text-slate-600">Account Type</span>
                       </div>
@@ -318,11 +308,10 @@ const Profile = () => {
               </>
             )}
 
-            {/* ════ EDIT PROFILE TAB ════ */}
+            {/* Edit Profile */}
             {activeTab === "edit" && (
               <div className="space-y-5">
 
-                {/* Personal Info */}
                 <Section title="Personal Information" subtitle="Update your display name">
                   <div className="space-y-4 max-w-lg">
                     <div>
@@ -359,7 +348,6 @@ const Profile = () => {
                       />
                     </div>
 
-                    {/* Actions */}
                     <div className="flex gap-3 pt-2">
                       <button onClick={handleSaveProfile} disabled={saving}
                         className="flex items-center gap-2 bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 text-white text-sm font-bold px-6 py-2.5 rounded-xl transition shadow-sm shadow-indigo-200">
@@ -376,7 +364,6 @@ const Profile = () => {
                   </div>
                 </Section>
 
-                {/* ── Security divider ── */}
                 <div className="flex items-center gap-3">
                   <div className="h-px flex-1 bg-slate-200" />
                   <span className="text-[11px] font-black text-slate-400 uppercase tracking-wider px-1 flex items-center gap-1.5">

@@ -4,6 +4,7 @@ import { v2 as cloudinary } from "cloudinary";
 import dayjs from "dayjs";
 import utc from "dayjs/plugin/utc.js";
 import timezone from "dayjs/plugin/timezone.js";
+import { getIO } from "../utils/socket.js";
 
 dayjs.extend(utc);
 dayjs.extend(timezone);
@@ -12,9 +13,7 @@ dayjs.extend(timezone);
 export const addNewAuctionItem = async (req, res) => {
   try {
     if (!req.files || !req.files.image) {
-      return res
-        .status(400)
-        .json({ message: "Auction item image is required" });
+      return res.status(400).json({ message: "Auction item image is required" });
     }
 
     const { image } = req.files;
@@ -24,43 +23,21 @@ export const addNewAuctionItem = async (req, res) => {
       return res.status(400).json({ message: "File format not supported" });
     }
 
-    const {
-      title,
-      description,
-      category,
-      condition,
-      startingBid,
-      startTime,
-      endTime,
-    } = req.body;
+    const { title, description, category, condition, startingBid, startTime, endTime } = req.body;
 
-    if (
-      !title ||
-      !description ||
-      !category ||
-      !condition ||
-      !startingBid ||
-      !startTime ||
-      !endTime
-    ) {
+    if (!title || !description || !category || !condition || !startingBid || !startTime || !endTime) {
       return res.status(400).json({ message: "All fields are required" });
     }
 
-    /* Nepal Time → UTC Conversion */
     const start = dayjs.tz(startTime, "Asia/Kathmandu").utc().toDate();
-    const end = dayjs.tz(endTime, "Asia/Kathmandu").utc().toDate();
-    const now = new Date();
+    const end   = dayjs.tz(endTime,   "Asia/Kathmandu").utc().toDate();
+    const now   = new Date();
 
     if (start < now) {
-      return res
-        .status(400)
-        .json({ message: "Start time cannot be in the past" });
+      return res.status(400).json({ message: "Start time cannot be in the past" });
     }
-
     if (start >= end) {
-      return res
-        .status(400)
-        .json({ message: "Start time must be less than end time" });
+      return res.status(400).json({ message: "Start time must be less than end time" });
     }
 
     const uploadResult = await cloudinary.uploader.upload(image.tempFilePath, {
@@ -86,21 +63,18 @@ export const addNewAuctionItem = async (req, res) => {
       isProcessed: false,
     });
 
-    req.app.get("io")?.emit("auctionStatusUpdate", {
-      auctionId: auctionItem._id.toString(),
-      status: auctionItem.status,
+    getIO().emit("newAuctionSubmitted", {
+      ...auctionItem.toObject(),
+      createdBy: { _id: req.user._id, name: req.user.name, email: req.user.email },
     });
 
-    res.status(201).json({
-      message: "Auction item created successfully",
-      auctionItem,
-    });
+    res.status(201).json({ message: "Auction item created successfully", auctionItem });
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
 };
 
-/* Get all auctions — populate seller name & avatar */
+/* Get All Auctions */
 export const getAllItems = async (_req, res) => {
   try {
     const items = await Auction.find().populate("createdBy", "name email profileImage");
@@ -124,7 +98,7 @@ export const getAuctionDetails = async (req, res) => {
       return res.status(404).json({ message: "Auction not found" });
     }
 
-    const bidders = auctionItem.bids.sort((a, b) => b.amount - a.amount);
+    const bidders = [...auctionItem.bids].sort((a, b) => b.amount - a.amount);
 
     res.status(200).json({ auctionItem, bidders });
   } catch (error) {
@@ -132,8 +106,6 @@ export const getAuctionDetails = async (req, res) => {
   }
 };
 
-
-/* Delete Auction */
 export const removeFromAuction = async (req, res) => {
   try {
     const { id } = req.params;
@@ -143,79 +115,167 @@ export const removeFromAuction = async (req, res) => {
     }
 
     const auctionItem = await Auction.findById(id);
-
     if (!auctionItem) {
       return res.status(404).json({ message: "Auction not found" });
     }
-
     if (auctionItem.createdBy.toString() !== req.user._id.toString()) {
       return res.status(403).json({ message: "Not authorized" });
     }
 
     await auctionItem.deleteOne();
-
-    res.status(200).json({
-      message: "Auction item deleted successfully",
-    });
+    res.status(200).json({ message: "Auction item deleted successfully" });
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
 };
 
-/* Republish Auction */
-// export const republishItem = async (req, res) => {
-//   try {
-//     const { id } = req.params;
-//     const { startTime, endTime } = req.body;
+/* Update Auction (Upcoming only) */
+export const updateAuctionItem = async (req, res) => {
+  try {
+    const { id } = req.params;
 
-//     if (!mongoose.Types.ObjectId.isValid(id)) {
-//       return res.status(400).json({ message: "Invalid auction ID" });
-//     }
+    if (!mongoose.Types.ObjectId.isValid(id)) {
+      return res.status(400).json({ message: "Invalid auction ID" });
+    }
 
-//     if (!startTime || !endTime) {
-//       return res.status(400).json({
-//         message: "Start time and End time required",
-//       });
-//     }
+    const auctionItem = await Auction.findById(id);
+    if (!auctionItem) {
+      return res.status(404).json({ message: "Auction not found" });
+    }
+    if (auctionItem.createdBy.toString() !== req.user._id.toString()) {
+      return res.status(403).json({ message: "Not authorized" });
+    }
+    // Only Upcoming or Rejected auctions can be edited
+    const isUpcoming = auctionItem.status === "Upcoming";
+    const isRejected = auctionItem.approvalStatus === "Rejected";
+    if (!isUpcoming && !isRejected) {
+      return res.status(400).json({ message: "Only upcoming or rejected auctions can be edited" });
+    }
 
-//     const auctionItem = await Auction.findById(id);
-//     if (!auctionItem) {
-//       return res.status(404).json({ message: "Auction not found" });
-//     }
+    const { title, description, category, condition, startingBid, startTime, endTime } = req.body;
 
-//     const start = dayjs.tz(startTime, "Asia/Kathmandu").utc().toDate();
-//     const end = dayjs.tz(endTime, "Asia/Kathmandu").utc().toDate();
-//     const now = new Date();
+    if (title) auctionItem.title = title;
+    if (description) auctionItem.description = description;
+    if (category) auctionItem.category = category;
+    if (condition) auctionItem.condition   = condition;
+    if (startingBid) auctionItem.startingBid = startingBid;
 
-//     if (auctionItem.status === "Live") {
-//       return res.status(400).json({ message: "Auction is still active" });
-//     }
+    if (startTime && endTime) {
+      const start = dayjs.tz(startTime, "Asia/Kathmandu").utc().toDate();
+      const end   = dayjs.tz(endTime,   "Asia/Kathmandu").utc().toDate();
+      const now   = new Date();
 
-//     if (start < now) {
-//       return res.status(400).json({ message: "Start time must be in future" });
-//     }
+      if (start < now) {
+        return res.status(400).json({ message: "Start time cannot be in the past" });
+      }
+      if (start >= end) {
+        return res.status(400).json({ message: "Start time must be less than end time" });
+      }
 
-//     if (start >= end) {
-//       return res.status(400).json({
-//         message: "Start time must be less than end time",
-//       });
-//     }
+      auctionItem.startTime = start;
+      auctionItem.endTime   = end;
+    }
 
-//     auctionItem.startTime = start;
-//     auctionItem.endTime = end;
-//     auctionItem.bids = [];
-//     auctionItem.currentBid = auctionItem.startingBid;
-//     auctionItem.highestBidder = null;
-//     auctionItem.status = start > now ? "Upcoming" : "Live";
-//     auctionItem.isProcessed = false;
+    if (req.files && req.files.image) {
+      const { image } = req.files;
+      const allowedFormats = ["image/png", "image/jpeg", "image/webp"];
+      if (!allowedFormats.includes(image.mimetype)) {
+        return res.status(400).json({ message: "File format not supported" });
+      }
 
-//     await auctionItem.save();
+      await cloudinary.uploader.destroy(auctionItem.image.public_id);
+      const uploadResult = await cloudinary.uploader.upload(image.tempFilePath, {
+        folder: "AUCTION_ITEMS",
+      });
+      auctionItem.image = { public_id: uploadResult.public_id, url: uploadResult.secure_url };
+    }
 
-//     res.status(200).json({
-//       message: "Auction republished successfully",
-//       auctionItem,
-//     });
-//   } catch (error) {
-//     res.status(500).json({ message: error.message });
-//   }
-// };
+    const wasRejected = auctionItem.approvalStatus === "Rejected";
+
+    if (wasRejected) {
+      auctionItem.approvalStatus = "Pending";
+    }
+
+    await auctionItem.save();
+
+    if (wasRejected) {
+      const io = getIO();
+
+      // Tell the seller Rejected → Pending instantly
+      io.emit("auctionApprovalChanged", {
+        auctionId: auctionItem._id.toString(),
+        approvalStatus: "Pending",
+      });
+
+      // Notify admin dashboard with a toast + add/update the row
+      io.emit("newAuctionSubmitted", {
+        ...auctionItem.toObject(),
+        createdBy: { _id: req.user._id, name: req.user.name, email: req.user.email },
+      });
+    }
+
+    res.status(200).json({ message: "Auction updated successfully", auctionItem });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+/* Republish Rejected Auction */
+export const republishItem = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { startTime, endTime } = req.body;
+
+    if (!mongoose.Types.ObjectId.isValid(id)) {
+      return res.status(400).json({ message: "Invalid auction ID" });
+    }
+    if (!startTime || !endTime) {
+      return res.status(400).json({ message: "Start time and End time required" });
+    }
+
+    const auctionItem = await Auction.findById(id);
+    if (!auctionItem) {
+      return res.status(404).json({ message: "Auction not found" });
+    }
+    if (auctionItem.createdBy.toString() !== req.user._id.toString()) {
+      return res.status(403).json({ message: "Not authorized" });
+    }
+    if (auctionItem.approvalStatus !== "Rejected") {
+      return res.status(400).json({ message: "Only rejected auctions can be republished" });
+    }
+
+    const start = dayjs.tz(startTime, "Asia/Kathmandu").utc().toDate();
+    const end = dayjs.tz(endTime, "Asia/Kathmandu").utc().toDate();
+    const now = new Date();
+
+    if (start < now) {
+      return res.status(400).json({ message: "Start time must be in the future" });
+    }
+    if (start >= end) {
+      return res.status(400).json({ message: "Start time must be less than end time" });
+    }
+
+    // Reset auction back to pending review with fresh times
+    auctionItem.startTime = start;
+    auctionItem.endTime = end;
+    auctionItem.bids = [];
+    auctionItem.currentBid = 0;
+    auctionItem.highestBidder  = null;
+    auctionItem.winner = null;
+    auctionItem.status = "Upcoming";
+    auctionItem.approvalStatus = "Pending";
+    auctionItem.isProcessed = false;
+
+    await auctionItem.save();
+
+    // Notify admin dashboard
+    getIO().emit("newAuctionSubmitted", {
+      ...auctionItem.toObject(),
+      createdBy: { _id: req.user._id, name: req.user.name, email: req.user.email },
+    });
+
+    res.status(200).json({ message: "Auction republished successfully", auctionItem });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
