@@ -108,6 +108,34 @@ const logout = async (req, res) => {
   }
 };
 
+const getProfile = async (req, res) => {
+  try {
+    const user = await User.findById(req.user._id).select(
+      "name email roles isVerified status createdAt"
+    );
+    if (!user) return res.status(404).json({ message: "User not found" });
+    res.status(200).json({ user });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+const updateProfile = async (req, res) => {
+  try {
+    const { name } = req.body;
+    if (!name || !name.trim())
+      return res.status(400).json({ message: "Name cannot be empty" });
+    const user = await User.findByIdAndUpdate(
+      req.user._id,
+      { name: name.trim() },
+      { new: true }
+    ).select("name email roles isVerified status createdAt");
+    res.status(200).json({ message: "Profile updated successfully", user });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
 export const getSellerProfile = async (req, res) => {
   try {
     const { id } = req.params;
@@ -135,4 +163,4 @@ export const getSellerProfile = async (req, res) => {
   }
 };
 
-export default { signup, verifyEmail, login, logout, resendOtp, forgotPassword, resetPassword };
+export default { signup, verifyEmail, login, logout, resendOtp, forgotPassword, resetPassword, getSellerProfile, getProfile, updateProfile, };

@@ -28,9 +28,9 @@ const ProfileDropdown = ({ userName, userRole, onLogout, navigate }) => {
   const [open, setOpen] = useState(false);
 
   const roleColors = {
-    admin:  "bg-violet-100 text-violet-700",
+    admin: "bg-violet-100 text-violet-700",
     seller: "bg-emerald-100 text-emerald-700",
-    user:   "bg-indigo-100 text-indigo-700",
+    user: "bg-indigo-100 text-indigo-700",
     bidder: "bg-indigo-100 text-indigo-700",
   };
   const roleKey = userRole?.toLowerCase();
@@ -274,18 +274,17 @@ const UserDashboard = () => {
 
   const handleLogout = () => { sessionStorage.removeItem("user"); navigate("/"); };
 
-  const live   = auctions.filter((a) => a.status === "Live");
-  const ending = auctions.filter((a) => getTime(a.endTime).urgent && !getTime(a.endTime).ended);
-  const hour   = new Date().getHours();
+  const live = auctions.filter((a) => a.status === "Live");
+  const hour = new Date().getHours();
   const greet  = hour < 12 ? "Good morning" : hour < 17 ? "Good afternoon" : "Good evening";
 
   const cats = [
-    { icon: Car, label: "Vehicles", color: "blue", count: auctions.filter((a) => a.category === "Vehicles").length    },
-    { icon: Palette, label: "Fine Art", color: "violet", count: auctions.filter((a) => a.category === "Art").length         },
-    { icon: Watch, label: "Watches",  color: "amber", count: auctions.filter((a) => a.category === "Watches").length     },
+    { icon: Car, label: "Vehicles", color: "blue", count: auctions.filter((a) => a.category === "Vehicles").length },
+    { icon: Palette, label: "Fine Art", color: "violet", count: auctions.filter((a) => a.category === "Art").length },
+    { icon: Watch, label: "Watches",  color: "amber", count: auctions.filter((a) => a.category === "Watches").length },
     { icon: Laptop, label: "Tech", color: "emerald", count: auctions.filter((a) => a.category === "Electronics").length },
-    { icon: Gem, label: "Jewelry", color: "rose", count: auctions.filter((a) => a.category === "Jewelry").length     },
-    { icon: Package, label: "All Items",color: "slate", count: auctions.length                                             },
+    { icon: Gem, label: "Jewelry", color: "rose", count: auctions.filter((a) => a.category === "Jewelry").length },
+    { icon: Package, label: "All Items",color: "slate", count: auctions.length },
   ];
 
   return (
@@ -418,10 +417,10 @@ const UserDashboard = () => {
         {/* Trust badges */}
         <section className="grid grid-cols-2 lg:grid-cols-4 gap-4">
           {[
-            { icon: Shield, color: "bg-emerald-50 text-emerald-600", label: "Verified Sellers", desc: "Every seller reviewed"   },
-            { icon: Zap, color: "bg-indigo-50 text-indigo-600", label: "Real-Time Bidding", desc: "Live countdowns"         },
-            { icon: Trophy, color: "bg-amber-50 text-amber-600", label: "Buyer Protection", desc: "Money-back guarantee"    },
-            { icon: TrendingUp,color: "bg-rose-50 text-rose-600", label: "Transparent Pricing", desc: "Full bid history"        },
+            { icon: Shield, color: "bg-emerald-50 text-emerald-600", label: "Verified Sellers", desc: "Every seller reviewed" },
+            { icon: Zap, color: "bg-indigo-50 text-indigo-600", label: "Real-Time Bidding", desc: "Live countdowns" },
+            { icon: Trophy, color: "bg-amber-50 text-amber-600", label: "Buyer Protection", desc: "Money-back guarantee" },
+            { icon: TrendingUp,color: "bg-rose-50 text-rose-600", label: "Transparent Pricing", desc: "Full bid history" },
           ].map(({ icon: Icon, color, label, desc }) => (
             <div key={label} className="bg-white rounded-2xl border border-slate-100 p-4 flex items-center gap-3 hover:shadow-md transition-shadow">
               <div className={`w-10 h-10 ${color} rounded-xl flex items-center justify-center flex-shrink-0`}>
