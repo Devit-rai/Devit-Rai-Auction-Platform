@@ -1,7 +1,7 @@
 // src/pages/admin/UserManagement.jsx
 import React, { useState } from "react";
 import { Search, CheckCircle, XCircle, RefreshCw, Ban, UserCheck } from "lucide-react";
-import { fmtDate, StatusBadge, PageHeader, MiniStat, FilterSelect, LoadingRows } from "./adminShared";
+import { fmtDate, StatusBadge, PageHeader, MiniStat, FilterSelect, LoadingRows } from "./AdminShared";
 
 const UserManagement = ({ users, loading, adminId, onRefresh, onConfirm }) => {
   const [userSearch, setUserSearch] = useState("");
@@ -31,9 +31,9 @@ const UserManagement = ({ users, loading, adminId, onRefresh, onConfirm }) => {
       />
 
       <div className="grid grid-cols-3 gap-4">
-        <MiniStat label="Active"    value={activeUsers}    color="emerald" />
-        <MiniStat label="Sellers"   value={sellerCount}    color="indigo"  />
-        <MiniStat label="Suspended" value={suspendedCount} color="red"     />
+        <MiniStat label="Active" value={activeUsers} color="emerald" />
+        <MiniStat label="Sellers" value={sellerCount} color="indigo" />
+        <MiniStat label="Suspended" value={suspendedCount} color="red" />
       </div>
 
       <div className="flex items-center gap-3">
@@ -44,12 +44,12 @@ const UserManagement = ({ users, loading, adminId, onRefresh, onConfirm }) => {
             className="w-full pl-9 pr-4 py-2 text-xs bg-white border border-slate-200 rounded-xl focus:outline-none focus:border-indigo-400 transition" />
         </div>
         <FilterSelect value={userFilter} onChange={setUserFilter} options={[
-          { label: "All Users",  value: "all"       },
-          { label: "Buyers",     value: "USER"      },
-          { label: "Sellers",    value: "SELLER"    },
-          { label: "Active",     value: "Active"    },
-          { label: "Suspended",  value: "Suspended" },
-          { label: "Banned",     value: "Banned"    },
+          { label: "All Users", value: "all" },
+          { label: "Buyers", value: "USER" },
+          { label: "Sellers", value: "SELLER" },
+          { label: "Active", value: "Active" },
+          { label: "Suspended", value: "Suspended" },
+          { label: "Banned", value: "Banned" },
         ]} />
       </div>
 

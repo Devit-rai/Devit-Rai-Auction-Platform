@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import {
   Plus, Edit, Trash2, X,
   Image as ImageIcon, Gavel, LayoutDashboard,
@@ -7,10 +7,11 @@ import {
   TrendingUp, Users, Calendar, Tag, Layers, Package,
   RefreshCw,
 } from "lucide-react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom"; // ← added useLocation
 import api from "../../api/axios";
 import { socket } from "../../api/socket";
 import { toast } from "react-hot-toast";
+import NotificationBell from "../../components/NotificationBell"; // ← added
 
 const fmt = (n) => "NPR " + Number(n || 0).toLocaleString();
 const fmtDate = (d) => d ? new Date(d).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" }) : "—";
@@ -52,10 +53,10 @@ const StatusBadge = ({ status }) => {
 const ApprovalBadge = ({ status }) => {
   const map = {
     Approved: { cls: "bg-emerald-50 text-emerald-700 border-emerald-200", icon: CheckCircle },
-    Rejected: { cls: "bg-red-50 text-red-600 border-red-200", icon: XCircle    },
-    Pending: { cls: "bg-amber-50 text-amber-700 border-amber-200", icon: Clock      },
+    Rejected: { cls: "bg-red-50 text-red-600 border-red-200", icon: XCircle },
+    Pending: { cls: "bg-amber-50 text-amber-700 border-amber-200", icon: Clock },
   };
-  const cfg  = map[status] || map["Pending"];
+  const cfg = map[status] || map["Pending"];
   const Icon = cfg.icon;
   return (
     <span className={`inline-flex items-center gap-1 text-[11px] font-semibold px-2.5 py-1 rounded-full border ${cfg.cls}`}>
@@ -141,7 +142,7 @@ const AuctionDetailPanel = ({ auctionId, onClose, onEdit, onDelete, onRepublishe
           </button>
         </div>
 
-        {/* Republish sub-panel */}
+        {/* Republish */}
         {showRepublish && (
           <div className="flex-shrink-0 border-b border-slate-100 bg-amber-50 px-6 py-4">
             <div className="flex items-center justify-between mb-3">
@@ -156,15 +157,13 @@ const AuctionDetailPanel = ({ auctionId, onClose, onEdit, onDelete, onRepublishe
               <div className="grid grid-cols-2 gap-2">
                 <div>
                   <label className="text-[10px] font-black text-amber-600 uppercase tracking-widest block mb-1">Start Time</label>
-                  <input type="datetime-local" required
-                    value={repTimes.startTime}
+                  <input type="datetime-local" required value={repTimes.startTime}
                     onChange={(e) => setRepTimes((p) => ({ ...p, startTime: e.target.value }))}
                     className="w-full bg-white border border-amber-200 rounded-lg px-2.5 py-2 text-xs text-slate-700 focus:outline-none focus:border-amber-400 transition" />
                 </div>
                 <div>
                   <label className="text-[10px] font-black text-amber-600 uppercase tracking-widest block mb-1">End Time</label>
-                  <input type="datetime-local" required
-                    value={repTimes.endTime}
+                  <input type="datetime-local" required value={repTimes.endTime}
                     onChange={(e) => setRepTimes((p) => ({ ...p, endTime: e.target.value }))}
                     className="w-full bg-white border border-amber-200 rounded-lg px-2.5 py-2 text-xs text-slate-700 focus:outline-none focus:border-amber-400 transition" />
                 </div>
@@ -189,7 +188,6 @@ const AuctionDetailPanel = ({ auctionId, onClose, onEdit, onDelete, onRepublishe
             <div className="flex items-center justify-center h-full text-slate-400 text-sm">Failed to load</div>
           ) : (
             <div className="p-6 space-y-6">
-
               {/* Hero image */}
               <div className="rounded-2xl overflow-hidden border border-slate-100 relative">
                 <img src={a.image?.url} alt={a.title} className="w-full h-48 object-cover" />
@@ -228,8 +226,8 @@ const AuctionDetailPanel = ({ auctionId, onClose, onEdit, onDelete, onRepublishe
               <div className="grid grid-cols-3 gap-3">
                 {[
                   { icon: TrendingUp, label: "Current Bid", value: fmt(a.currentBid || a.startingBid), color: "text-indigo-600 bg-indigo-50" },
-                  { icon: Users, label: "Total Bids",  value: a.bids?.length || 0,                color: "text-emerald-600 bg-emerald-50" },
-                  { icon: Clock, label: "Time Left",   value: getTimeRemaining(a.endTime),        color: "text-amber-600 bg-amber-50" },
+                  { icon: Users, label: "Total Bids",  value: a.bids?.length || 0, color: "text-emerald-600 bg-emerald-50" },
+                  { icon: Clock, label: "Time Left",   value: getTimeRemaining(a.endTime), color: "text-amber-600 bg-amber-50" },
                 ].map(({ icon: Icon, label, value, color }) => (
                   <div key={label} className="bg-slate-50 rounded-xl p-3 border border-slate-100 text-center">
                     <div className={`w-7 h-7 rounded-lg ${color} flex items-center justify-center mx-auto mb-1.5`}>
@@ -263,7 +261,6 @@ const AuctionDetailPanel = ({ auctionId, onClose, onEdit, onDelete, onRepublishe
                 </div>
               </div>
 
-              {/* Description */}
               <div className="space-y-2">
                 <p className="text-[11px] font-black text-slate-400 uppercase tracking-widest">Description</p>
                 <p className="text-xs text-slate-600 leading-relaxed bg-slate-50 rounded-xl border border-slate-100 px-4 py-3">
@@ -305,7 +302,6 @@ const AuctionDetailPanel = ({ auctionId, onClose, onEdit, onDelete, onRepublishe
                   <p className="text-xs text-slate-400 font-medium">No bids yet</p>
                 </div>
               )}
-
             </div>
           )}
         </div>
@@ -314,34 +310,28 @@ const AuctionDetailPanel = ({ auctionId, onClose, onEdit, onDelete, onRepublishe
           <div className="flex-shrink-0 border-t border-slate-100 px-6 py-4 bg-white">
             {approval === "Rejected" ? (
               <div className="space-y-2">
-                <button
-                  onClick={() => { onEdit(a); onClose(); }}
+                <button onClick={() => { onEdit(a); onClose(); }}
                   className="w-full flex items-center justify-center gap-1.5 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 text-xs font-bold py-2.5 rounded-xl transition border border-indigo-200">
                   <Edit size={13} /> Edit &amp; Resubmit
                 </button>
-                <button
-                  onClick={() => { onDelete(a._id); onClose(); }}
+                <button onClick={() => { onDelete(a._id); onClose(); }}
                   className="w-full flex items-center justify-center gap-1.5 bg-red-50 hover:bg-red-100 text-red-600 text-xs font-bold py-2.5 rounded-xl transition border border-red-200">
                   <Trash2 size={13} /> Delete
                 </button>
               </div>
             ) : a.status === "Upcoming" ? (
               <div className="flex gap-2">
-                <button
-                  onClick={() => { onEdit(a); onClose(); }}
+                <button onClick={() => { onEdit(a); onClose(); }}
                   className="flex-1 flex items-center justify-center gap-1.5 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 text-xs font-bold py-2.5 rounded-xl transition border border-indigo-200">
                   <Edit size={13} /> Edit Listing
                 </button>
-                <button
-                  onClick={() => { onDelete(a._id); onClose(); }}
+                <button onClick={() => { onDelete(a._id); onClose(); }}
                   className="flex-1 flex items-center justify-center gap-1.5 bg-red-50 hover:bg-red-100 text-red-600 text-xs font-bold py-2.5 rounded-xl transition border border-red-200">
                   <Trash2 size={13} /> Delete
                 </button>
               </div>
             ) : (
-              /* Live or Ended — delete only */
-              <button
-                onClick={() => { onDelete(a._id); onClose(); }}
+              <button onClick={() => { onDelete(a._id); onClose(); }}
                 className="w-full flex items-center justify-center gap-1.5 bg-red-50 hover:bg-red-100 text-red-600 text-xs font-bold py-2.5 rounded-xl transition border border-red-200">
                 <Trash2 size={13} /> Delete
               </button>
@@ -353,20 +343,39 @@ const AuctionDetailPanel = ({ auctionId, onClose, onEdit, onDelete, onRepublishe
   );
 };
 
-const List = () => {
+const Inventory = () => {
   const navigate = useNavigate();
-  const [auctions,  setAuctions]  = useState([]);
-  const [loading, setLoading]   = useState(true);
+  const location = useLocation();
+  const pendingOpenId = useRef(
+    location.state?.openAuctionId ? location.state.openAuctionId.toString() : null
+  );
+  const [auctions,  setAuctions] = useState([]);
+  const [loading, setLoading] = useState(true);
   const [showModal, setShowModal] = useState(false);
-  const [editItem, setEditItem]  = useState(null);
-  const [deleteId, setDeleteId]  = useState(null);
-  const [deleting, setDeleting]  = useState(false);
-  const [detailId, setDetailId]  = useState(null);
-  const [panelKey, setPanelKey]  = useState(0);
+  const [editItem, setEditItem] = useState(null);
+  const [deleteId, setDeleteId] = useState(null);
+  const [deleting, setDeleting] = useState(false);
+  const [detailId, setDetailId] = useState(null);
+  const [panelKey, setPanelKey] = useState(0);
 
   const userData = JSON.parse(sessionStorage.getItem("user"));
   const user = userData?.user || userData;
   const isMyAuction = (item) => item.createdBy === user?._id || item.createdBy?._id === user?._id;
+
+  useEffect(() => {
+    if (location.state?.openAuctionId) {
+      window.history.replaceState({}, "");
+    }
+  }, []);
+
+  useEffect(() => {
+    const id = location.state?.openAuctionId;
+    if (id && location.state?._ts) {
+      pendingOpenId.current = id.toString();
+      window.history.replaceState({}, "");
+      fetchAuctions();
+    }
+  }, [location.state?._ts]);
 
   const fetchAuctions = async () => {
     try {
@@ -374,6 +383,12 @@ const List = () => {
       const { data } = await api.get("/auctions/all");
       const mine = (data.items || data || []).filter(isMyAuction);
       setAuctions(mine.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt)));
+
+      if (pendingOpenId.current) {
+        setDetailId(pendingOpenId.current);
+        setPanelKey((k) => k + 1);
+        pendingOpenId.current = null;
+      }
     } catch (e) { console.error("Fetch error:", e); }
     finally { setLoading(false); }
   };
@@ -385,12 +400,9 @@ const List = () => {
       setAuctions((prev) => prev.map((a) => a._id === auctionId ? { ...a, status } : a));
 
     const onApproval = ({ auctionId, approvalStatus }) => {
-      // Update the table row badge immediately
       setAuctions((prev) => prev.map((a) => a._id === auctionId ? { ...a, approvalStatus } : a));
       setDetailId((current) => {
-        if (current === auctionId) {
-          setPanelKey((k) => k + 1);
-        }
+        if (current === auctionId) setPanelKey((k) => k + 1);
         return current;
       });
     };
@@ -427,7 +439,6 @@ const List = () => {
   return (
     <div className="min-h-screen bg-[#F7F8FA] flex font-sans text-slate-900">
 
-      {/* Detail panel */}
       {detailId && (
         <AuctionDetailPanel
           key={panelKey}
@@ -456,7 +467,7 @@ const List = () => {
         </div>
         <nav className="flex-1 px-3 pt-2 space-y-0.5">
           <NavItem icon={LayoutDashboard} label="Dashboard" active={false} onClick={() => navigate("/seller-dashboard")} />
-          <NavItem icon={ListIcon} label="My Inventory" active={true}  onClick={() => navigate("/inventory")} />
+          <NavItem icon={ListIcon} label="My Inventory" active={true} onClick={() => navigate("/inventory")} />
         </nav>
         <div className="p-3 border-t border-slate-100">
           <button onClick={() => { sessionStorage.clear(); navigate("/login"); }}
@@ -466,77 +477,82 @@ const List = () => {
         </div>
       </aside>
 
-      <main className="flex-1 lg:ml-56 p-7">
-        <div className="flex items-start justify-between mb-6">
-          <div>
-            <h1 className="text-xl font-black text-slate-800">My Inventory</h1>
-            <p className="text-xs text-slate-400 mt-0.5">Manage your auction listings</p>
-          </div>
-          <div className="flex items-center gap-3">
-            <span className="inline-flex items-center gap-1.5 text-[10px] font-bold text-emerald-700 bg-emerald-50 border border-emerald-200 px-2 py-1 rounded-full">
-              <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" /> Live updates
-            </span>
-            <button onClick={() => { setEditItem(null); setShowModal(true); }}
-              className="flex items-center gap-1.5 bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-xl text-xs font-bold transition shadow-sm shadow-indigo-100">
-              <Plus size={14} /> New Auction
-            </button>
-          </div>
+      {/* Main */}
+      <main className="flex-1 lg:ml-56 min-h-screen">
+        <div className="sticky top-0 z-10 bg-[#F7F8FA]/80 backdrop-blur-sm border-b border-slate-200/60 px-7 py-3 flex items-center justify-end">
+          <NotificationBell />
         </div>
 
-        {pendingCount > 0 && (
-          <div className="mb-4 flex items-start gap-3 bg-amber-50 border border-amber-200 rounded-2xl px-5 py-3.5">
-            <Clock size={14} className="text-amber-500 flex-shrink-0 mt-0.5" />
-            <p className="text-xs font-bold text-amber-800">
-              {pendingCount} listing{pendingCount > 1 ? "s" : ""} awaiting admin approval — will go live once reviewed.
-            </p>
-          </div>
-        )}
-        {rejectedCount > 0 && (
-          <div className="mb-4 flex items-start gap-3 bg-red-50 border border-red-200 rounded-2xl px-5 py-3.5">
-            <AlertCircle size={14} className="text-red-500 flex-shrink-0 mt-0.5" />
-            <p className="text-xs font-bold text-red-700">
-              {rejectedCount} listing{rejectedCount > 1 ? "s" : ""} rejected — please review and resubmit.
-            </p>
-          </div>
-        )}
-
-        <div className="grid grid-cols-4 gap-3 mb-5">
-          {[
-            { label: "Live", value: liveCount, cls: "bg-emerald-50 text-emerald-700 border-emerald-100" },
-            { label: "Pending", value: pendingCount, cls: "bg-amber-50 text-amber-700 border-amber-100" },
-            { label: "Rejected", value: rejectedCount, cls: "bg-red-50 text-red-600 border-red-100" },
-            { label: "Total", value: auctions.length, cls: "bg-slate-100 text-slate-600 border-slate-200" },
-          ].map(({ label, value, cls }) => (
-            <div key={label} className={`rounded-xl px-4 py-3 border flex items-center justify-between ${cls}`}>
-              <span className="text-xs font-semibold">{label}</span>
-              <span className="text-xl font-black">{value}</span>
+        <div className="p-7">
+          <div className="flex items-start justify-between mb-6">
+            <div>
+              <h1 className="text-xl font-black text-slate-800">My Inventory</h1>
+              <p className="text-xs text-slate-400 mt-0.5">Manage your auction listings</p>
             </div>
-          ))}
-        </div>
+            <div className="flex items-center gap-3">
+              <span className="inline-flex items-center gap-1.5 text-[10px] font-bold text-emerald-700 bg-emerald-50 border border-emerald-200 px-2 py-1 rounded-full">
+                <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" /> Live updates
+              </span>
+              <button onClick={() => { setEditItem(null); setShowModal(true); }}
+                className="flex items-center gap-1.5 bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-xl text-xs font-bold transition shadow-sm shadow-indigo-100">
+                <Plus size={14} /> New Auction
+              </button>
+            </div>
+          </div>
 
-        <div className="bg-white rounded-2xl border border-slate-100 overflow-hidden">
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm">
-              <thead>
-                <tr className="border-b border-slate-100 bg-slate-50/50 text-left">
-                  {["Product", "Price", "Status", "Approval", "Actions"].map((h) => (
-                    <th key={h} className="px-5 py-3.5 text-[11px] font-black text-slate-400 uppercase tracking-wide">{h}</th>
-                  ))}
-                </tr>
-              </thead>
-              <tbody>
-                {loading ? (
-                  [...Array(4)].map((_, i) => (
-                    <tr key={i} className="border-b border-slate-50">
-                      {[...Array(5)].map((_, j) => (
-                        <td key={j} className="px-5 py-4"><div className="h-4 bg-slate-100 rounded animate-pulse" /></td>
-                      ))}
-                    </tr>
-                  ))
-                ) : auctions.length === 0 ? (
-                  <tr><td colSpan={5} className="py-14 text-center text-slate-400 text-xs">No auctions yet. Create your first one!</td></tr>
-                ) : (
-                  auctions.map((item) => {
+          {pendingCount > 0 && (
+            <div className="mb-4 flex items-start gap-3 bg-amber-50 border border-amber-200 rounded-2xl px-5 py-3.5">
+              <Clock size={14} className="text-amber-500 flex-shrink-0 mt-0.5" />
+              <p className="text-xs font-bold text-amber-800">
+                {pendingCount} listing{pendingCount > 1 ? "s" : ""} awaiting admin approval — will go live once reviewed.
+              </p>
+            </div>
+          )}
+          {rejectedCount > 0 && (
+            <div className="mb-4 flex items-start gap-3 bg-red-50 border border-red-200 rounded-2xl px-5 py-3.5">
+              <AlertCircle size={14} className="text-red-500 flex-shrink-0 mt-0.5" />
+              <p className="text-xs font-bold text-red-700">
+                {rejectedCount} listing{rejectedCount > 1 ? "s" : ""} rejected — please review and resubmit.
+              </p>
+            </div>
+          )}
+
+          <div className="grid grid-cols-4 gap-3 mb-5">
+            {[
+              { label: "Live", value: liveCount, cls: "bg-emerald-50 text-emerald-700 border-emerald-100" },
+              { label: "Pending", value: pendingCount, cls: "bg-amber-50 text-amber-700 border-amber-100" },
+              { label: "Rejected", value: rejectedCount, cls: "bg-red-50 text-red-600 border-red-100" },
+              { label: "Total", value: auctions.length, cls: "bg-slate-100 text-slate-600 border-slate-200" },
+            ].map(({ label, value, cls }) => (
+              <div key={label} className={`rounded-xl px-4 py-3 border flex items-center justify-between ${cls}`}>
+                <span className="text-xs font-semibold">{label}</span>
+                <span className="text-xl font-black">{value}</span>
+              </div>
+            ))}
+          </div>
+
+          <div className="bg-white rounded-2xl border border-slate-100 overflow-hidden">
+            <div className="overflow-x-auto">
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="border-b border-slate-100 bg-slate-50/50 text-left">
+                    {["Product", "Price", "Status", "Approval", "Actions"].map((h) => (
+                      <th key={h} className="px-5 py-3.5 text-[11px] font-black text-slate-400 uppercase tracking-wide">{h}</th>
+                    ))}
+                  </tr>
+                </thead>
+                <tbody>
+                  {loading ? (
+                    [...Array(4)].map((_, i) => (
+                      <tr key={i} className="border-b border-slate-50">
+                        {[...Array(5)].map((_, j) => (
+                          <td key={j} className="px-5 py-4"><div className="h-4 bg-slate-100 rounded animate-pulse" /></td>
+                        ))}
+                      </tr>
+                    ))
+                  ) : auctions.length === 0 ? (
+                    <tr><td colSpan={5} className="py-14 text-center text-slate-400 text-xs">No auctions yet. Create your first one!</td></tr>
+                  ) : auctions.map((item) => {
                     const approval = item.approvalStatus || "Pending";
                     return (
                       <tr key={item._id}
@@ -580,10 +596,10 @@ const List = () => {
                         </td>
                       </tr>
                     );
-                  })
-                )}
-              </tbody>
-            </table>
+                  })}
+                </tbody>
+              </table>
+            </div>
           </div>
         </div>
       </main>
@@ -745,4 +761,4 @@ const AuctionForm = ({ item, onClose, onSuccess }) => {
   );
 };
 
-export default List;
+export default Inventory;

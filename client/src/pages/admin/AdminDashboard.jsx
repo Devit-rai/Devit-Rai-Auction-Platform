@@ -1,6 +1,5 @@
-// src/pages/admin/AdminDashboard.jsx
-import React, { useState, useEffect, useCallback } from "react";
-import { useNavigate } from "react-router-dom";
+import React, { useState, useEffect, useCallback, useRef } from "react";
+import { useNavigate, useLocation } from "react-router-dom";
 import api from "../../api/axios";
 import { socket } from "../../api/socket";
 import { toast } from "react-hot-toast";
@@ -8,9 +7,10 @@ import {
   Gavel, Users, LayoutDashboard, LogOut,
   Shield, RefreshCw, Clock, ArrowUpRight, XCircle,
 } from "lucide-react";
-import { fmtDate, StatusBadge, ConfirmModal } from "./adminShared";
+import { fmtDate, StatusBadge, ConfirmModal } from "./AdminShared";
 import AuctionManagement from "./AuctionManagement";
-import UserManagement from "./UserManagement";
+import UserManagement    from "./UserManagement";
+import NotificationBell  from "../../components/NotificationBell";
 
 const StatCard = ({ label, value, color, icon, loading }) => {
   const colorMap = {
@@ -54,9 +54,29 @@ const NewListingToast = ({ auction, onClose }) => (
   </div>
 );
 
-/* ── AdminDashboard  */
 const AdminDashboard = () => {
   const navigate = useNavigate();
+  const location = useLocation();
+  const pendingOpenId = useRef(
+    location.state?.openAuctionId ? location.state.openAuctionId.toString() : null
+  );
+
+  useEffect(() => {
+    if (location.state?.tab) {
+      setActiveTab(location.state.tab);
+      window.history.replaceState({}, "");
+    }
+  }, []);
+
+  useEffect(() => {
+    const id = location.state?.openAuctionId;
+    if (id && location.state?._ts) { // _ts means it's a fresh navigation click
+      pendingOpenId.current = id.toString();
+      if (location.state?.tab) setActiveTab(location.state.tab);
+      window.history.replaceState({}, "");
+      fetchAuctions(); // re-run fetch so pendingOpenId gets consumed
+    }
+  }, [location.state?._ts]);
   const [activeTab, setActiveTab] = useState("overview");
   const [auctions, setAuctions] = useState([]);
   const [users, setUsers] = useState([]);
@@ -68,13 +88,35 @@ const AdminDashboard = () => {
   const [detailRefreshKey, setDetailRefreshKey] = useState(0);
 
   const sessionData = JSON.parse(sessionStorage.getItem("user") || localStorage.getItem("user") || "{}");
-  const adminId = sessionData?.user?._id || sessionData?._id || null;
+  const adminId = sessionData?.user?._id || sessionData?._id || sessionData?.user?.user?._id || null;
+  console.log("[Admin] adminId:", adminId);
+
+  useEffect(() => {
+    const joinRoom = () => {
+      if (adminId) {
+        socket.emit("joinUserRoom", adminId);
+        console.log("[Admin] Joined notification room:", adminId);
+      }
+    };
+    joinRoom();
+    socket.on("connect", joinRoom); // re-join after reconnect
+    return () => {
+      socket.off("connect", joinRoom);
+      if (adminId) socket.emit("leaveUserRoom", adminId);
+    };
+  }, [adminId]);
 
   const fetchAuctions = useCallback(async () => {
     setLoadingA(true);
     try {
       const { data } = await api.get("/admin/auctions");
       setAuctions(data.auctions || []);
+
+      if (pendingOpenId.current) {
+        setDetailId(pendingOpenId.current);
+        setDetailRefreshKey((k) => k + 1);
+        pendingOpenId.current = null;
+      }
     } catch { toast.error("Failed to load auctions"); }
     finally { setLoadingA(false); }
   }, []);
@@ -154,23 +196,26 @@ const AdminDashboard = () => {
     } catch (e) { toast.error(e.response?.data?.message || "Failed"); }
   };
 
-  const handleLogout = () => { sessionStorage.removeItem("user"); localStorage.removeItem("user"); navigate("/"); };
+  const handleLogout = () => {
+    if (adminId) socket.emit("leaveUserRoom", adminId);
+    sessionStorage.removeItem("user");
+    localStorage.removeItem("user");
+    navigate("/");
+  };
 
-  /* Counts */
   const liveCount = auctions.filter((a) => a.status === "Live").length;
   const pendingCount = auctions.filter((a) => a.approvalStatus === "Pending").length;
   const activeUsers = users.filter((u) => u.status === "Active" && u._id !== adminId).length;
   const sellerCount = users.filter((u) => u.roles?.includes("SELLER") && u._id !== adminId).length;
   const suspendedCount = users.filter((u) => (u.status === "Suspended" || u.status === "Banned") && u._id !== adminId).length;
 
-  /* Confirm config */
   const cfgMap = {
-    approve: { title: "Approve Auction", desc: `Approve "${confirm?.title}"? It will go live at its scheduled start time.`,   label: "Approve",     color: "bg-emerald-500 hover:bg-emerald-600" },
-    reject: { title: "Reject Auction", desc: `Reject "${confirm?.title}"? The seller will not be able to run this auction.`, label: "Reject",      color: "bg-red-500 hover:bg-red-600" },
-    forceClose: { title: "Force Close Auction", desc: `Force close "${confirm?.title}"? This will immediately end the auction.`,     label: "Force Close", color: "bg-red-500 hover:bg-red-600" },
-    suspendUser:  { title: "Suspend User", desc: `Suspend "${confirm?.name}"? They won't be able to bid or list items.`,        label: "Suspend",     color: "bg-red-500 hover:bg-red-600" },
-    banUser: { title: "Ban User", desc: `Permanently ban "${confirm?.name}"? This is a serious action.`,               label: "Ban User",    color: "bg-rose-600 hover:bg-rose-700" },
-    activateUser: { title: "Activate User", desc: `Reactivate account for "${confirm?.name}"?`,                                  label: "Activate",    color: "bg-emerald-500 hover:bg-emerald-600" },
+    approve: { title: "Approve Auction", desc: `Approve "${confirm?.title}"? It will go live at its scheduled start time.`, label: "Approve", color: "bg-emerald-500 hover:bg-emerald-600" },
+    reject: { title: "Reject Auction", desc: `Reject "${confirm?.title}"? The seller will not be able to run this auction.`, label: "Reject", color: "bg-red-500 hover:bg-red-600" },
+    forceClose: { title: "Force Close Auction", desc: `Force close "${confirm?.title}"? This will immediately end the auction.`, label: "Force Close", color: "bg-red-500 hover:bg-red-600" },
+    suspendUser: { title: "Suspend User", desc: `Suspend "${confirm?.name}"? They won't be able to bid or list items.`, label: "Suspend", color: "bg-red-500 hover:bg-red-600" },
+    banUser: { title: "Ban User", desc: `Permanently ban "${confirm?.name}"? This is a serious action.`, label: "Ban User", color: "bg-rose-600 hover:bg-rose-700" },
+    activateUser: { title: "Activate User", desc: `Reactivate account for "${confirm?.name}"?`, label: "Activate", color: "bg-emerald-500 hover:bg-emerald-600" },
   };
   const cfg = confirm ? cfgMap[confirm.type] : null;
 
@@ -188,10 +233,13 @@ const AdminDashboard = () => {
       <style>{`@keyframes toastIn { from { opacity:0; transform:translateY(10px) scale(.97); } to { opacity:1; transform:translateY(0) scale(1); } }`}</style>
 
       <aside className="w-56 bg-white border-r border-slate-100 flex flex-col fixed h-full z-20">
+        {/* Logo */}
         <div className="flex items-center gap-2 px-5 py-4 border-b border-slate-100">
           <div className="w-7 h-7 bg-indigo-600 rounded-lg flex items-center justify-center"><Gavel size={14} className="text-white" /></div>
           <span className="font-black text-slate-900 text-sm tracking-tight">BidHub</span>
         </div>
+
+        {/* Admin badge */}
         <div className="mx-3 mt-3 mb-1 bg-indigo-50 border border-indigo-100 rounded-xl px-3 py-2.5 flex items-center gap-2">
           <Shield size={13} className="text-indigo-600 flex-shrink-0" />
           <div className="min-w-0">
@@ -199,21 +247,31 @@ const AdminDashboard = () => {
             <p className="text-xs font-black text-indigo-700">Administrator</p>
           </div>
         </div>
+
+        {/* Nav */}
         <nav className="flex-1 px-3 pt-2 space-y-0.5">
-          <NavItem icon={<LayoutDashboard size={15} />} label="Overview" active={activeTab === "overview"} onClick={() => setActiveTab("overview")}/>
+          <NavItem icon={<LayoutDashboard size={15} />} label="Overview" active={activeTab === "overview"} onClick={() => setActiveTab("overview")} />
           <NavItem icon={<Gavel size={15} />} label="Auction Management" active={activeTab === "auctions"} onClick={() => setActiveTab("auctions")} />
           <NavItem icon={<Users size={15} />} label="User Management" active={activeTab === "users"} onClick={() => setActiveTab("users")} />
         </nav>
+
         <div className="p-3 border-t border-slate-100">
-          <button onClick={handleLogout} className="w-full flex items-center gap-2 text-xs font-semibold text-slate-500 hover:text-red-500 px-3 py-2.5 rounded-xl hover:bg-red-50 transition">
+          <button
+            onClick={handleLogout}
+            className="w-full flex items-center gap-2 text-xs font-semibold text-slate-500 hover:text-red-500 px-3 py-2.5 rounded-xl hover:bg-red-50 transition"
+          >
             <LogOut size={14} /> Log Out
           </button>
         </div>
       </aside>
 
-      <main className="ml-56 flex-1 p-7 min-h-screen">
+      <main className="ml-56 flex-1 min-h-screen">
 
-        {/* Overview */}
+        <div className="sticky top-0 z-10 bg-[#F7F8FA]/80 backdrop-blur-sm border-b border-slate-200/60 px-7 py-3 flex items-center justify-end">
+          <NotificationBell />
+        </div>
+
+        <div className="p-7">
         {activeTab === "overview" && (
           <div className="space-y-6">
             <div className="flex items-start justify-between">
@@ -224,8 +282,8 @@ const AdminDashboard = () => {
             </div>
 
             <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-              <StatCard label="Live Auctions" value={liveCount} color="emerald" icon={<Gavel size={17} />} loading={loadingAuctions} />
-              <StatCard label="Pending Approval" value={pendingCount} color="amber" icon={<Clock size={17} />} loading={loadingAuctions} />
+              <StatCard label="Live Auctions" value={liveCount} color="emerald" icon={<Gavel size={17} />}  loading={loadingAuctions} />
+              <StatCard label="Pending Approval" value={pendingCount} color="amber" icon={<Clock size={17} />}  loading={loadingAuctions} />
               <StatCard label="Bidders" value={activeUsers} color="indigo" icon={<Users size={17} />} loading={loadingUsers} />
               <StatCard label="Sellers" value={sellerCount} color="purple" icon={<Shield size={17} />} loading={loadingUsers} />
             </div>
@@ -309,7 +367,7 @@ const AdminDashboard = () => {
                   <Users size={13} /> Manage Users
                   {suspendedCount > 0 && <span className="bg-red-500 text-white text-[9px] font-black w-4 h-4 rounded-full flex items-center justify-center">{suspendedCount}</span>}
                 </button>
-                <button onClick={() => {fetchAuctions(); fetchUsers(); toast.success("Refreshed"); }} className="flex items-center gap-2 bg-emerald-50 text-emerald-700 px-4 py-2.5 rounded-xl text-xs font-bold hover:bg-emerald-100 transition">
+                <button onClick={() => { fetchAuctions(); fetchUsers(); toast.success("Refreshed"); }} className="flex items-center gap-2 bg-emerald-50 text-emerald-700 px-4 py-2.5 rounded-xl text-xs font-bold hover:bg-emerald-100 transition">
                   <RefreshCw size={13} /> Refresh Data
                 </button>
               </div>
@@ -341,9 +399,10 @@ const AdminDashboard = () => {
             onConfirm={setConfirm}
           />
         )}
+
+        </div>
       </main>
 
-      {/* Global confirm model */}
       <ConfirmModal
         open={!!confirm}
         title={cfg?.title}

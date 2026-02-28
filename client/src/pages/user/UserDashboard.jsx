@@ -3,11 +3,12 @@ import { useNavigate } from "react-router-dom";
 import api from "../../api/axios";
 import {
   Gavel, Search, LogOut, ChevronRight,
-   Car, Palette, Watch, Laptop, Gem, Bell,
+   Car, Palette, Watch, Laptop, Gem,
   Zap, ArrowUpRight, Package, Shield,
   Trophy, TrendingUp, Star, User,
   ChevronDown,
 } from "lucide-react";
+import NotificationBell from "../../components/NotificationBell";
 
 const fmt = (n) => "NPR " + Number(n).toLocaleString();
 
@@ -141,10 +142,7 @@ const Navbar = ({ userName, userRole, onLogout, navigate, search, setSearch }) =
 
       {/* Right */}
       <div className="flex items-center gap-1.5 ml-auto flex-shrink-0">
-        <button className="relative w-8 h-8 rounded-lg bg-slate-50 border border-slate-200 flex items-center justify-center text-slate-500 hover:bg-slate-100 transition">
-          <Bell size={13} />
-          <span className="absolute top-1 right-1 w-1.5 h-1.5 bg-red-500 rounded-full border border-white" />
-        </button>
+        <NotificationBell />
         <div className="w-px h-5 bg-slate-200 mx-0.5" />
 
         {/* Clickable Profile Dropdown */}
