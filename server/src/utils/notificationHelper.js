@@ -1,4 +1,3 @@
-// server/utils/notificationHelper.js
 import { Notification } from "../models/Notification.js";
 import { getIO } from "./socket.js";
 import User from "../models/User.js";

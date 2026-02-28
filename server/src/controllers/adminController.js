@@ -1,4 +1,3 @@
-// server/controllers/adminController.js
 import User from "../models/User.js";
 import { Auction } from "../models/Auction.js";
 import mongoose from "mongoose";
@@ -7,7 +6,7 @@ import { getIO } from "../utils/socket.js";
 import {
   createNotification,
   notifyBidders,
-} from "../utils/notificationHelper.js";
+} from "../utils/NotificationHelper.js";
 
 export const getAllUsers = async (req, res) => {
   try {

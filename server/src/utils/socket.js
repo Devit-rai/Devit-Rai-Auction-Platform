@@ -1,4 +1,3 @@
-// server/utils/socket.js
 import { Server } from "socket.io";
 
 let io;
@@ -31,7 +30,7 @@ export const initSocket = (server) => {
       socket.broadcast.emit("auctionApprovalChanged", { auctionId, approvalStatus });
     });
 
-    // ── Auction live countdown)
+    // Auction live countdown)
     socket.on("joinAuction", (auctionId) => {
       socket.join(auctionId);
       console.log(`[Socket] ${socket.id} joined auction: ${auctionId}`);

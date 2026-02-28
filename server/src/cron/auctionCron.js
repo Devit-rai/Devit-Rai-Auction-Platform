@@ -1,9 +1,8 @@
-// server/utils/auctionCron.js
 import cron from "node-cron";
 import { Auction } from "../models/Auction.js";
 import { sendWinnerEmail } from "../utils/auctionWinner.js";
 import { getIO } from "../utils/socket.js";
-import { createNotification, notifyBidders } from "../utils/notificationHelper.js";
+import { createNotification, notifyBidders } from "../utils/NotificationHelper.js";
 
 export const auctionCron = () => {
   cron.schedule("*/1 * * * * *", async () => {

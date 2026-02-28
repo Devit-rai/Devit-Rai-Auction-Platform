@@ -1,4 +1,3 @@
-// src/pages/admin/AdminDashboard.jsx
 import React, { useState, useEffect, useCallback, useRef } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import api from "../../api/axios";
@@ -401,7 +400,7 @@ const AdminDashboard = () => {
           />
         )}
 
-        </div>{/* end p-7 */}
+        </div>
       </main>
 
       <ConfirmModal

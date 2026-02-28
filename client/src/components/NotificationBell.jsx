@@ -1,4 +1,3 @@
-// src/components/NotificationBell.jsx
 import React, { useState, useRef, useEffect } from "react";
 import { Bell, CheckCheck, Trash2, Gavel, CheckCircle, XCircle, Clock, TrendingUp, Zap } from "lucide-react";
 import { useNotifications } from "../hooks/useNotifications";
@@ -158,7 +157,6 @@ const NotificationBell = ({ className = "" }) => {
                     title="Clear all"
                     className="flex items-center gap-1 text-[10px] font-bold text-slate-400 hover:text-red-500 px-2 py-1 rounded-lg hover:bg-red-50 transition"
                   >
-                    <Trash2 size={11} />
                   </button>
                 )}
               </div>

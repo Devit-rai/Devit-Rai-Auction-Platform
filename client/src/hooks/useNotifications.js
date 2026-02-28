@@ -1,4 +1,3 @@
-// src/hooks/useNotifications.js
 import { useState, useEffect, useCallback } from "react";
 import api from "../api/axios";
 import { socket } from "../api/socket";

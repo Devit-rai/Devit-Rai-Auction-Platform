@@ -5,7 +5,7 @@ import dayjs from "dayjs";
 import utc from "dayjs/plugin/utc.js";
 import timezone from "dayjs/plugin/timezone.js";
 import { getIO } from "../utils/socket.js";
-import { notifyAdmins } from "../utils/notificationHelper.js"; // ← THE MISSING IMPORT
+import { notifyAdmins } from "../utils/NotificationHelper.js";
 
 dayjs.extend(utc);
 dayjs.extend(timezone);
