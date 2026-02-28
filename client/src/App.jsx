@@ -8,9 +8,9 @@ import Login from './pages/auth/Login'
 import Landing from './pages/landing/Landing'
 import UserDashboard from './pages/user/UserDashboard'
 import SellerDashboard from './pages/seller/SellerDashboard'
-import AdminDashboard from './pages/admin/AdminDashboard'
+import AdminDashboard from './pages/admin/adminDashboard'
 import BidHistory from './pages/seller/BidHistory'
-import List from './pages/seller/List'
+import Inventory from './pages/seller/Inventory'
 import Auction from './pages/user/Auction'
 import AuctionDetails from './pages/user/AuctionDetails'
 import Profile from './pages/profile/Profile'
@@ -33,7 +33,7 @@ function App() {
           <Route path='/seller-dashboard' element={<SellerDashboard/>} />
           <Route path='/admin-dashboard' element={<AdminDashboard/>} />
           <Route path='/bid-history' element={<BidHistory/>} />
-          <Route path='/inventory' element={<List/>} />
+          <Route path='/inventory' element={<Inventory/>} />
           <Route path='/auctions' element={<Auction/>} />
           <Route path='/auction/:id' element={<AuctionDetails/>} />
           <Route path='/profile' element={<Profile/>} />

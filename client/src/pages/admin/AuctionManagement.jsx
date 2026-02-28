@@ -9,7 +9,7 @@ import {
 import {
   fmt, fmtDate, fmtDateTime, getTimeRemaining,
   StatusBadge, PageHeader, MiniStat, FilterSelect, LoadingRows,
-} from "./adminShared";
+} from "./AdminShared";
 
 const AuctionDetailPanel = ({ auctionId, onClose, onApprove, onReject, onForceClose }) => {
   const [data, setData] = useState(null);
@@ -36,8 +36,6 @@ const AuctionDetailPanel = ({ auctionId, onClose, onApprove, onReject, onForceCl
         style={{ animation: "slideIn .22s cubic-bezier(.22,1,.36,1)" }}
       >
         <style>{`@keyframes slideIn { from { transform: translateX(100%); } to { transform: translateX(0); } }`}</style>
-
-        {/* Header */}
         <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100 flex-shrink-0">
           <div className="flex items-center gap-2.5">
             <div className="w-8 h-8 bg-indigo-50 rounded-xl flex items-center justify-center">
@@ -53,7 +51,6 @@ const AuctionDetailPanel = ({ auctionId, onClose, onApprove, onReject, onForceCl
           </button>
         </div>
 
-        {/* Body */}
         <div className="flex-1 overflow-y-auto">
           {loading ? (
             <div className="flex items-center justify-center h-full">
@@ -64,7 +61,6 @@ const AuctionDetailPanel = ({ auctionId, onClose, onApprove, onReject, onForceCl
           ) : (
             <div className="p-6 space-y-6">
 
-              {/* Hero */}
               <div className="rounded-2xl overflow-hidden border border-slate-100 relative">
                 <img src={a.image?.url} alt={a.title} className="w-full h-52 object-cover" />
                 <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent" />
@@ -78,7 +74,6 @@ const AuctionDetailPanel = ({ auctionId, onClose, onApprove, onReject, onForceCl
                 </div>
               </div>
 
-              {/* Quick stats */}
               <div className="grid grid-cols-3 gap-3">
                 {[
                   { icon: TrendingUp, label: "Current Bid", value: fmt(a.currentBid || a.startingBid), color: "text-indigo-600 bg-indigo-50" },
@@ -95,7 +90,6 @@ const AuctionDetailPanel = ({ auctionId, onClose, onApprove, onReject, onForceCl
                 ))}
               </div>
 
-              {/* Details */}
               <div className="space-y-3">
                 <p className="text-[11px] font-black text-slate-400 uppercase tracking-widest">Details</p>
                 <div className="bg-slate-50 rounded-xl border border-slate-100 divide-y divide-slate-100">
@@ -117,7 +111,6 @@ const AuctionDetailPanel = ({ auctionId, onClose, onApprove, onReject, onForceCl
                 </div>
               </div>
 
-              {/* Description */}
               <div className="space-y-2">
                 <p className="text-[11px] font-black text-slate-400 uppercase tracking-widest">Description</p>
                 <p className="text-xs text-slate-600 leading-relaxed bg-slate-50 rounded-xl border border-slate-100 px-4 py-3">
