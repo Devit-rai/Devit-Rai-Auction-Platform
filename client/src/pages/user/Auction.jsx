@@ -9,6 +9,7 @@ import {
   Shield, User, Star, BadgeCheck, Mail,
 } from "lucide-react";
 import { toast } from "react-hot-toast";
+import { socket } from "../../api/socket";
 
 const fmt = (n) => "NPR\u00A0" + Number(n).toLocaleString();
 
@@ -130,7 +131,6 @@ const SellerChip = ({ seller, navigate, className = "" }) => {
         {seller.isVerified && <BadgeCheck size={11} className="text-indigo-400 flex-shrink-0" />}
       </button>
 
-      {/* Hover popup */}
       {hovered && (
         <div
           onClick={(e) => e.stopPropagation()}
@@ -506,6 +506,67 @@ const Auction = () => {
     })();
   }, []);
 
+  // Real-time socket updates
+  useEffect(() => {
+    // Upcoming → Live
+    const onStatusUpdate = ({ auctionId, status }) => {
+      setAuctions((prev) =>
+        prev.map((a) => a._id === auctionId ? { ...a, status } : a)
+      );
+      if (status === "Live") {
+        setAuctions((prev) => {
+          const a = prev.find((x) => x._id === auctionId);
+          if (a) toast.success(`"${a.title}" is now Live!`, { icon: "🔴" });
+          return prev;
+        });
+      }
+    };
+
+    const onNewBid = ({ auctionId, amount, bidCount }) => {
+      setAuctions((prev) =>
+        prev.map((a) => {
+          if (a._id !== auctionId) return a;
+          return {
+            ...a,
+            currentBid: amount,
+            bids: bidCount != null
+              ? Array(bidCount).fill(null)
+              : [...(a.bids || []), {}],
+          };
+        })
+      );
+    };
+
+    // Approval changed 
+    const onApproval = ({ auctionId, approvalStatus }) => {
+      if (approvalStatus === "Approved") {
+        api.get(`/auctions/${auctionId}`)
+          .then(({ data }) => {
+            const item = data.auctionItem || data;
+            if (!item) return;
+            setAuctions((prev) => {
+              const exists = prev.some((a) => a._id === auctionId);
+              return exists ? prev : [item, ...prev];
+            });
+          })
+          .catch(() => {});
+      } else {
+        // Remove from public list if rejected / revoked
+        setAuctions((prev) => prev.filter((a) => a._id !== auctionId));
+      }
+    };
+
+    socket.on("auctionStatusUpdated", onStatusUpdate);
+    socket.on("newBidPlaced", onNewBid);
+    socket.on("auctionApprovalChanged", onApproval);
+
+    return () => {
+      socket.off("auctionStatusUpdated", onStatusUpdate);
+      socket.off("newBidPlaced", onNewBid);
+      socket.off("auctionApprovalChanged", onApproval);
+    };
+  }, []);
+
   const handleLogout = () => { sessionStorage.removeItem("user"); toast.success("Logged out"); navigate("/"); };
 
   const toggleFav = useCallback(async (e, id) => {
@@ -670,10 +731,10 @@ const Auction = () => {
           {STATUS_TABS.map(({ label, value, icon: Icon, accent }) => {
             const active = statusTab === value;
             const styles = {
-              indigo:  { on: "bg-indigo-600 text-white border-indigo-600",  cnt: "bg-white/20 text-white", off: "bg-white text-slate-600 border-slate-200 hover:border-indigo-300 hover:text-indigo-600" },
+              indigo:  { on: "bg-indigo-600 text-white border-indigo-600", cnt: "bg-white/20 text-white", off: "bg-white text-slate-600 border-slate-200 hover:border-indigo-300 hover:text-indigo-600" },
               emerald: { on: "bg-emerald-600 text-white border-emerald-600", cnt: "bg-white/20 text-white", off: "bg-white text-slate-600 border-slate-200 hover:border-emerald-300 hover:text-emerald-700" },
               amber:   { on: "bg-amber-500 text-white border-amber-500", cnt: "bg-white/20 text-white", off: "bg-white text-slate-600 border-slate-200 hover:border-amber-300 hover:text-amber-600" },
-              slate:   { on: "bg-slate-800 text-white border-slate-800",    cnt: "bg-white/20 text-white", off: "bg-white text-slate-600 border-slate-200 hover:border-slate-300 hover:text-slate-800" },
+              slate:   { on: "bg-slate-800 text-white border-slate-800", cnt: "bg-white/20 text-white", off: "bg-white text-slate-600 border-slate-200 hover:border-slate-300 hover:text-slate-800" },
             }[accent];
             return (
               <button key={value} onClick={() => setStatusTab(value)}
