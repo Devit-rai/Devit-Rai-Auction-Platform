@@ -7,11 +7,11 @@ import {
   TrendingUp, Users, Calendar, Tag, Layers, Package,
   RefreshCw,
 } from "lucide-react";
-import { useNavigate, useLocation } from "react-router-dom"; // ← added useLocation
+import { useNavigate, useLocation } from "react-router-dom"; 
 import api from "../../api/axios";
 import { socket } from "../../api/socket";
 import { toast } from "react-hot-toast";
-import NotificationBell from "../../components/NotificationBell"; // ← added
+import NotificationBell from "../../components/NotificationBell";
 
 const fmt = (n) => "NPR " + Number(n || 0).toLocaleString();
 const fmtDate = (d) => d ? new Date(d).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" }) : "—";

@@ -23,7 +23,7 @@ export const useNotifications = () => {
     fetchNotifications();
   }, [fetchNotifications]);
 
-  // Real-time notification pushed from server
+  // Real-time notification 
   useEffect(() => {
     const onNew = (notification) => {
       setNotifications((prev) => [notification, ...prev].slice(0, 50));

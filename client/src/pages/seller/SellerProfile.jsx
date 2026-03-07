@@ -5,7 +5,7 @@ import {
   Gavel, ArrowLeft, Clock, Zap, Mail, ShieldCheck,
   BadgeCheck, TrendingUp, Package, ChevronRight,
   LayoutGrid, List, ArrowUpRight, Star, ChevronDown,
-  CalendarDays,
+  CalendarDays, MessageCircle,
 } from "lucide-react";
 import { toast } from "react-hot-toast";
 import Review from "../review/Review";
@@ -66,10 +66,8 @@ const ListingsAccordion = ({ auctions, navigate }) => {
 
   return (
     <div className="bg-white rounded-2xl border border-slate-200 overflow-hidden shadow-sm">
-      <button
-        onClick={() => setOpen((o) => !o)}
-        className="w-full flex items-center justify-between px-6 py-5 hover:bg-slate-50 transition group"
-      >
+      <button onClick={() => setOpen((o) => !o)}
+        className="w-full flex items-center justify-between px-6 py-5 hover:bg-slate-50 transition group">
         <div className="flex items-center gap-3">
           <div className={`w-9 h-9 rounded-xl flex items-center justify-center transition ${open ? "bg-indigo-600 text-white" : "bg-indigo-50 text-indigo-600"}`}>
             <Package size={16} />
@@ -82,8 +80,7 @@ const ListingsAccordion = ({ auctions, navigate }) => {
         <div className="flex items-center gap-3">
           {counts["Live"] > 0 && (
             <span className="inline-flex items-center gap-1 bg-emerald-50 text-emerald-600 text-[11px] font-bold px-2.5 py-1 rounded-full border border-emerald-100">
-              <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
-              {counts["Live"]} Live
+              <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />{counts["Live"]} Live
             </span>
           )}
           <ChevronDown size={18} className={`text-slate-400 transition-transform duration-300 ${open ? "rotate-180" : ""}`} />
@@ -96,13 +93,9 @@ const ListingsAccordion = ({ auctions, navigate }) => {
             <div className="flex items-center bg-slate-50 border border-slate-200 rounded-xl p-1 gap-0.5">
               {TABS.map((t) => (
                 <button key={t} onClick={() => setTab(t)}
-                  className={`px-3 py-1.5 rounded-lg text-xs font-bold transition flex items-center gap-1.5 ${
-                    tab === t ? "bg-white text-slate-900 shadow-sm" : "text-slate-400 hover:text-slate-600"
-                  }`}>
+                  className={`px-3 py-1.5 rounded-lg text-xs font-bold transition flex items-center gap-1.5 ${tab === t ? "bg-white text-slate-900 shadow-sm" : "text-slate-400 hover:text-slate-600"}`}>
                   {t}
-                  <span className={`text-[10px] px-1.5 py-0.5 rounded-full font-black ${
-                    tab === t ? "bg-indigo-100 text-indigo-600" : "bg-slate-200 text-slate-500"
-                  }`}>{counts[t]}</span>
+                  <span className={`text-[10px] px-1.5 py-0.5 rounded-full font-black ${tab === t ? "bg-indigo-100 text-indigo-600" : "bg-slate-200 text-slate-500"}`}>{counts[t]}</span>
                 </button>
               ))}
             </div>
@@ -131,22 +124,17 @@ const ListingsAccordion = ({ auctions, navigate }) => {
                 <article key={item._id} onClick={() => navigate(`/auction/${item._id}`)}
                   className="group bg-slate-50 rounded-2xl overflow-hidden border border-slate-200 hover:border-indigo-200 hover:shadow-lg transition-all duration-300 cursor-pointer flex flex-col">
                   <div className="relative overflow-hidden aspect-[4/3]">
-                    <img src={item.image?.url} alt={item.title}
-                      className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105" />
+                    <img src={item.image?.url} alt={item.title} className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105" />
                     <div className="absolute top-2.5 left-2.5"><StatusPill status={item.status} endTime={item.endTime} /></div>
                     <div className="absolute bottom-2.5 left-2.5 opacity-0 group-hover:opacity-100 transition-opacity">
-                      <span className="bg-black/60 backdrop-blur-sm text-white text-[10px] font-semibold px-2 py-0.5 rounded-full">
-                        {item.bids?.length || 0} bids
-                      </span>
+                      <span className="bg-black/60 backdrop-blur-sm text-white text-[10px] font-semibold px-2 py-0.5 rounded-full">{item.bids?.length || 0} bids</span>
                     </div>
                   </div>
                   <div className="p-4 flex flex-col flex-1">
                     <div className="flex items-center justify-between mb-1">
                       <p className="text-[10px] font-semibold text-slate-400 uppercase tracking-widest">{item.category}</p>
                       {item.condition && (
-                        <span className={`text-[9px] font-bold px-1.5 py-0.5 rounded-md ${item.condition === "New" ? "bg-emerald-50 text-emerald-600" : "bg-amber-50 text-amber-600"}`}>
-                          {item.condition}
-                        </span>
+                        <span className={`text-[9px] font-bold px-1.5 py-0.5 rounded-md ${item.condition === "New" ? "bg-emerald-50 text-emerald-600" : "bg-amber-50 text-amber-600"}`}>{item.condition}</span>
                       )}
                     </div>
                     <h3 className="text-sm font-bold text-slate-800 line-clamp-2 group-hover:text-indigo-700 transition-colors mb-3 leading-snug">{item.title}</h3>
@@ -220,6 +208,8 @@ const SellerProfile = () => {
   const [loading, setLoading] = useState(true);
   const [reviewStats, setReviewStats] = useState({ avgRating: 0, total: 0, breakdown: [] });
 
+  const isOwnProfile = currentUserId && seller && currentUserId === seller._id?.toString();
+
   useEffect(() => {
     (async () => {
       try {
@@ -235,9 +225,16 @@ const SellerProfile = () => {
     })();
   }, [id]);
 
-  const liveCount = auctions.filter((a) => a.status === "Live").length;
-  const endedCount = auctions.filter((a) => a.status === "Ended").length;
-  const initial = seller?.name?.charAt(0).toUpperCase() || "S";
+  const handleMessageSeller = () => {
+    if (!seller) return;
+    window.dispatchEvent(
+      new CustomEvent("openChatWith", { detail: { user: seller } })
+    );
+  };
+
+  const liveCount   = auctions.filter((a) => a.status === "Live").length;
+  const endedCount  = auctions.filter((a) => a.status === "Ended").length;
+  const initial     = seller?.name?.charAt(0).toUpperCase() || "S";
   const memberSince = seller?.createdAt
     ? new Date(seller.createdAt).toLocaleDateString("en-US", { month: "long", year: "numeric" })
     : "—";
@@ -268,6 +265,7 @@ const SellerProfile = () => {
 
   return (
     <div className="min-h-screen bg-[#F4F5F7] font-sans">
+      {/* Header */}
       <header className="bg-white border-b border-slate-200 sticky top-0 z-50">
         <div className="max-w-screen-xl mx-auto px-6 h-14 flex items-center gap-3">
           <div onClick={() => navigate("/user-dashboard")} className="flex items-center gap-2 cursor-pointer flex-shrink-0">
@@ -349,9 +347,21 @@ const SellerProfile = () => {
                     <span>{seller.isVerified ? "Verified account" : "Unverified account"}</span>
                   </div>
                 </div>
+
+                {/* Message Seller Button */}
+                {!isOwnProfile && (
+                  <button
+                    onClick={handleMessageSeller}
+                    className="mt-5 w-full flex items-center justify-center gap-2 bg-gradient-to-r from-indigo-600 to-violet-600 hover:from-indigo-700 hover:to-violet-700 text-white text-xs font-bold py-3 rounded-xl transition-all shadow-md shadow-indigo-200 hover:shadow-lg hover:shadow-indigo-300 hover:-translate-y-0.5 group"
+                  >
+                    <MessageCircle size={14} className="group-hover:scale-110 transition-transform" />
+                    Message Seller
+                  </button>
+                )}
               </div>
             </div>
 
+            {/* Stats */}
             <div className="bg-white rounded-2xl border border-slate-100 p-5 shadow-sm">
               <h3 className="text-xs font-black text-slate-400 uppercase tracking-widest mb-4">Seller Stats</h3>
               <div className="grid grid-cols-2 gap-3">
@@ -361,9 +371,7 @@ const SellerProfile = () => {
                   { label: "Completed", value: endedCount, icon: Clock, color: "bg-amber-50 text-amber-600" },
                 ].map(({ label, value, icon: Icon, color }) => (
                   <div key={label} className="bg-slate-50 rounded-xl p-3 border border-slate-100">
-                    <div className={`w-7 h-7 rounded-lg ${color} flex items-center justify-center mb-2`}>
-                      <Icon size={13} />
-                    </div>
+                    <div className={`w-7 h-7 rounded-lg ${color} flex items-center justify-center mb-2`}><Icon size={13} /></div>
                     <p className="text-xl font-black text-slate-900 leading-none">{value}</p>
                     <p className="text-[11px] text-slate-400 mt-0.5 font-medium">{label}</p>
                   </div>
@@ -371,7 +379,7 @@ const SellerProfile = () => {
               </div>
             </div>
 
-            {/* Rating summary card*/}
+            {/* Rating */}
             {reviewStats.total > 0 && (
               <div className="bg-white rounded-2xl border border-slate-100 p-5 shadow-sm">
                 <h3 className="text-xs font-black text-slate-400 uppercase tracking-widest mb-4">Rating Summary</h3>
@@ -402,18 +410,13 @@ const SellerProfile = () => {
             )}
           </div>
 
-          {/* Right content */}
           <div className="lg:col-span-2 space-y-5">
-            {/* Review handles all review logic */}
-            <Review
-              sellerId={id}
-              currentUserId={currentUserId}
-              onStatsChange={setReviewStats}
-            />
+            <Review sellerId={id} currentUserId={currentUserId} onStatsChange={setReviewStats} />
             <ListingsAccordion auctions={auctions} navigate={navigate} />
           </div>
         </div>
       </div>
+
     </div>
   );
 };
