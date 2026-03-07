@@ -2,6 +2,8 @@ import { Server } from "socket.io";
 
 let io;
 
+const userSocketMap = {};
+
 export const initSocket = (server) => {
   io = new Server(server, {
     cors: {
@@ -13,16 +15,30 @@ export const initSocket = (server) => {
 
   io.on("connection", (socket) => {
     console.log("User connected:", socket.id);
-    socket.on("joinUserRoom", (userId) => {
-      if (userId) {
-        socket.join(`user:${userId}`);
-        console.log(`[Socket] ${socket.id} joined user room: user:${userId}`);
+
+    // Online status
+    const userId = socket.handshake.query.userId;
+    if (userId) {
+      userSocketMap[userId] = socket.id;
+      io.emit("getOnlineUsers", Object.keys(userSocketMap));
+      console.log(`[Socket] User ${userId} is now ONLINE`);
+    }
+
+    // Personal notification room
+    socket.on("joinUserRoom", (uid) => {
+      if (uid) {
+        socket.join(`user:${uid}`);
+        if (!userSocketMap[uid]) {
+          userSocketMap[uid] = socket.id;
+          io.emit("getOnlineUsers", Object.keys(userSocketMap));
+        }
+        console.log(`[Socket] ${socket.id} joined user room: user:${uid}`);
       }
     });
 
-    socket.on("leaveUserRoom", (userId) => {
-      if (userId) {
-        socket.leave(`user:${userId}`);
+    socket.on("leaveUserRoom", (uid) => {
+      if (uid) {
+        socket.leave(`user:${uid}`);
       }
     });
 
@@ -30,7 +46,7 @@ export const initSocket = (server) => {
       socket.broadcast.emit("auctionApprovalChanged", { auctionId, approvalStatus });
     });
 
-    // Auction live countdown)
+    // Auction rooms
     socket.on("joinAuction", (auctionId) => {
       socket.join(auctionId);
       console.log(`[Socket] ${socket.id} joined auction: ${auctionId}`);
@@ -40,8 +56,19 @@ export const initSocket = (server) => {
       socket.leave(auctionId);
     });
 
+    // Disconnect: mark user offline 
     socket.on("disconnect", () => {
       console.log("User disconnected:", socket.id);
+
+      const disconnectedUserId = Object.keys(userSocketMap).find(
+        (uid) => userSocketMap[uid] === socket.id
+      );
+
+      if (disconnectedUserId) {
+        delete userSocketMap[disconnectedUserId];
+        io.emit("getOnlineUsers", Object.keys(userSocketMap));
+        console.log(`[Socket] User ${disconnectedUserId} is now OFFLINE`);
+      }
     });
   });
 
@@ -52,3 +79,5 @@ export const getIO = () => {
   if (!io) throw new Error("Socket.io not initialized — call initSocket first");
   return io;
 };
+
+export const getReceiverSocketId = (userId) => userSocketMap[userId];

@@ -37,7 +37,6 @@ const CountdownTimer = ({ endTime, onEnd }) => {
   return <span className="font-mono font-bold">{timeLeft}</span>;
 };
 
-/* Main Component */
 const AuctionDetails = () => {
   const { id } = useParams();
   const navigate = useNavigate();
@@ -53,7 +52,6 @@ const AuctionDetails = () => {
     idRef.current = id;
   }, [id]);
 
-  /* Fetch Auction Details */
   const fetchDetails = useCallback(async () => {
     try {
       const { data } = await api.get(`/auctions/${id}`);
@@ -91,7 +89,6 @@ const AuctionDetails = () => {
 
         let updatedBids;
         if (existingIndex !== -1) {
-          // Replace full bid object so userName is always correct
           updatedBids = prev.bids.map((b, i) =>
             i === existingIndex ? { ...incoming } : b,
           );
@@ -211,7 +208,6 @@ const AuctionDetails = () => {
                         : "bg-slate-50 border-transparent"
                     }`}
                   >
-                    {/* ✅ Always real name from DB — no "You (pending...)" ever */}
                     <p className="font-semibold">{bid.userName}</p>
                     <p className="font-bold text-blue-600">
                       NPR {Number(bid.amount).toLocaleString()}

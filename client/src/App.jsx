@@ -16,6 +16,7 @@ import AuctionDetails from './pages/user/AuctionDetails'
 import Profile from './pages/profile/Profile'
 import SellerProfile from './pages/seller/SellerProfile'
 import ForgetPassword from './pages/profile/ForgetPassword'
+import GlobalChatBox from './components/GlobalChatBox'
 
 function App() {
   const [count, setCount] = useState(0)
@@ -23,6 +24,7 @@ function App() {
   return (
     <>
       <Toaster position="top-right" reverseOrder={false} />
+      <GlobalChatBox />
       <Router>
         <Routes>
           <Route path="/" element={<Landing />} />

@@ -3,10 +3,10 @@ import { useNavigate } from "react-router-dom";
 import api from "../../api/axios";
 import {
   Gavel, Search, LogOut, ChevronRight,
-   Car, Palette, Watch, Laptop, Gem,
+  Car, Palette, Watch, Laptop, Gem,
   Zap, ArrowUpRight, Package, Shield,
   Trophy, TrendingUp, Star, User,
-  ChevronDown,
+  ChevronDown, MessageCircle,
 } from "lucide-react";
 import NotificationBell from "../../components/NotificationBell";
 
@@ -58,7 +58,6 @@ const ProfileDropdown = ({ userName, userRole, onLogout, navigate }) => {
         <>
           <div className="fixed inset-0 z-[90]" onClick={() => setOpen(false)} />
           <div className="absolute right-0 top-full mt-2 w-52 bg-white rounded-2xl border border-slate-200 shadow-xl z-[100] overflow-hidden">
-            {/* Header */}
             <div className="px-4 py-3.5 bg-gradient-to-br from-indigo-50 to-slate-50 border-b border-slate-100">
               <div className="flex items-center gap-3">
                 <div className="w-9 h-9 rounded-xl bg-indigo-100 flex items-center justify-center text-indigo-700 font-black text-sm uppercase">
@@ -128,7 +127,6 @@ const Navbar = ({ userName, userRole, onLogout, navigate, search, setSearch }) =
 
       <div className="w-px h-5 bg-slate-200 hidden md:block" />
 
-      {/* Search */}
       <div className="flex-1 relative max-w-lg">
         <Search size={13} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
         <input
@@ -140,12 +138,9 @@ const Navbar = ({ userName, userRole, onLogout, navigate, search, setSearch }) =
         />
       </div>
 
-      {/* Right */}
       <div className="flex items-center gap-1.5 ml-auto flex-shrink-0">
         <NotificationBell />
         <div className="w-px h-5 bg-slate-200 mx-0.5" />
-
-        {/* Clickable Profile Dropdown */}
         <ProfileDropdown
           userName={userName}
           userRole={userRole}
@@ -157,15 +152,15 @@ const Navbar = ({ userName, userRole, onLogout, navigate, search, setSearch }) =
   </header>
 );
 
-// Live Auction Card
-const AuctionCard = ({ item, navigate }) => {
+// Auction Card — with "Message Seller" quick action
+const AuctionCard = ({ item, navigate, onMessageSeller }) => {
   const t = getTime(item.endTime);
   return (
-    <div
-      onClick={() => navigate(`/auction/${item._id}`)}
-      className="group bg-white rounded-2xl border border-slate-100 overflow-hidden hover:border-indigo-200 hover:shadow-xl transition-all duration-300 cursor-pointer flex flex-col"
-    >
-      <div className="relative h-44 overflow-hidden">
+    <div className="group bg-white rounded-2xl border border-slate-100 overflow-hidden hover:border-indigo-200 hover:shadow-xl transition-all duration-300 cursor-pointer flex flex-col">
+      <div
+        onClick={() => navigate(`/auction/${item._id}`)}
+        className="relative h-44 overflow-hidden"
+      >
         <img
           src={item.image?.url}
           alt={item.title}
@@ -188,7 +183,10 @@ const AuctionCard = ({ item, navigate }) => {
       </div>
       <div className="p-4 flex flex-col flex-1">
         <p className="text-[10px] font-semibold text-slate-400 uppercase tracking-widest mb-1">{item.category}</p>
-        <h3 className="text-sm font-bold text-slate-800 line-clamp-1 group-hover:text-indigo-700 transition-colors mb-auto">
+        <h3
+          onClick={() => navigate(`/auction/${item._id}`)}
+          className="text-sm font-bold text-slate-800 line-clamp-1 group-hover:text-indigo-700 transition-colors mb-auto"
+        >
           {item.title}
         </h3>
         <div className="h-px bg-slate-100 my-3" />
@@ -202,15 +200,33 @@ const AuctionCard = ({ item, navigate }) => {
             <p className={`text-xs font-bold ${t.urgent ? "text-red-500" : "text-slate-700"}`}>{t.label}</p>
           </div>
         </div>
-        <button className="w-full flex items-center justify-center gap-1.5 bg-slate-900 hover:bg-indigo-600 text-white text-xs font-bold py-2.5 rounded-xl transition-all group/btn">
-          Place Bid <ArrowUpRight size={12} className="group-hover/btn:translate-x-0.5 group-hover/btn:-translate-y-0.5 transition-transform" />
-        </button>
+
+        {/* Two action buttons: Bid + Message Seller */}
+        <div className="flex gap-2">
+          <button
+            onClick={() => navigate(`/auction/${item._id}`)}
+            className="flex-1 flex items-center justify-center gap-1.5 bg-slate-900 hover:bg-indigo-600 text-white text-xs font-bold py-2.5 rounded-xl transition-all group/btn"
+          >
+            Place Bid <ArrowUpRight size={12} className="group-hover/btn:translate-x-0.5 group-hover/btn:-translate-y-0.5 transition-transform" />
+          </button>
+          {item.createdBy && (
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                onMessageSeller(item.createdBy);
+              }}
+              title="Message Seller"
+              className="w-10 flex items-center justify-center bg-indigo-50 hover:bg-indigo-100 text-indigo-600 rounded-xl transition-colors border border-indigo-100"
+            >
+              <MessageCircle size={14} />
+            </button>
+          )}
+        </div>
       </div>
     </div>
   );
 };
 
-// Category Box
 const CategoryBox = ({ icon: Icon, label, color, count, navigate }) => {
   const palette = {
     blue: "bg-blue-50 text-blue-600 group-hover:bg-blue-600",
@@ -244,8 +260,9 @@ const UserDashboard = () => {
   const [searchResults, setSearchResults] = useState([]);
 
   const userData = JSON.parse(sessionStorage.getItem("user"));
-  const userName = userData?.user?.name || userData?.name || "User";
-  const rawRole  = userData?.role || userData?.user?.role || "BIDDER";
+  const user = userData?.user || userData;
+  const userName = user?.name || "User";
+  const rawRole  = user?.roles?.[0] || "USER";
   const userRole = rawRole.replace("ROLE_", "").toLowerCase();
 
   useEffect(() => {
@@ -261,7 +278,6 @@ const UserDashboard = () => {
     })();
   }, []);
 
-  // Live search
   useEffect(() => {
     if (search.trim().length < 2) { setSearchResults([]); return; }
     const q = search.toLowerCase();
@@ -272,8 +288,25 @@ const UserDashboard = () => {
 
   const handleLogout = () => { sessionStorage.removeItem("user"); navigate("/"); };
 
+  /* Message Seller helper */
+  const handleMessageSeller = async (createdBy) => {
+    // createdBy can be an object { _id, name, ... } or just an id string
+    if (createdBy && typeof createdBy === "object" && createdBy._id) {
+      window.dispatchEvent(new CustomEvent("openChatWith", { detail: { user: createdBy } }));
+      return;
+    }
+    try {
+      const { data } = await api.get(`/auth/seller/${createdBy}`);
+      window.dispatchEvent(
+        new CustomEvent("openChatWith", { detail: { user: data.seller } })
+      );
+    } catch (e) {
+      console.error("Could not load seller for chat:", e);
+    }
+  };
+
   const live = auctions.filter((a) => a.status === "Live");
-  const hour = new Date().getHours();
+  const hour   = new Date().getHours();
   const greet  = hour < 12 ? "Good morning" : hour < 17 ? "Good afternoon" : "Good evening";
 
   const cats = [
@@ -326,7 +359,6 @@ const UserDashboard = () => {
 
       <div className="max-w-screen-2xl mx-auto px-6 py-8 space-y-10">
 
-        {/* Hero */}
         <section className="grid lg:grid-cols-2 gap-6 items-stretch">
           <div className="bg-white rounded-2xl border border-slate-100 p-8 flex flex-col justify-between gap-6 relative overflow-hidden">
             <div className="absolute -top-16 -right-16 w-56 h-56 bg-indigo-50 rounded-full opacity-50 pointer-events-none" />
@@ -379,6 +411,14 @@ const UserDashboard = () => {
                   <span className="w-1.5 h-1.5 bg-white rounded-full animate-pulse" /> Live
                 </span>
               </div>
+              {live[0].createdBy && (
+                <button
+                  onClick={(e) => { e.stopPropagation(); handleMessageSeller(live[0].createdBy); }}
+                  className="absolute top-5 right-5 flex items-center gap-1.5 bg-white/10 backdrop-blur-md border border-white/20 text-white text-[10px] font-bold px-3 py-1.5 rounded-full hover:bg-white/20 transition"
+                >
+                  <MessageCircle size={10} /> Message Seller
+                </button>
+              )}
               <div className="absolute bottom-0 left-0 right-0 p-6">
                 <p className="text-white/50 text-[10px] font-bold uppercase tracking-widest mb-1">{live[0].category}</p>
                 <h2 className="text-xl font-black text-white leading-snug mb-4 line-clamp-2">{live[0].title}</h2>
@@ -412,13 +452,12 @@ const UserDashboard = () => {
           )}
         </section>
 
-        {/* Trust badges */}
         <section className="grid grid-cols-2 lg:grid-cols-4 gap-4">
           {[
             { icon: Shield, color: "bg-emerald-50 text-emerald-600", label: "Verified Sellers", desc: "Every seller reviewed" },
             { icon: Zap, color: "bg-indigo-50 text-indigo-600", label: "Real-Time Bidding", desc: "Live countdowns" },
             { icon: Trophy, color: "bg-amber-50 text-amber-600", label: "Buyer Protection", desc: "Money-back guarantee" },
-            { icon: TrendingUp,color: "bg-rose-50 text-rose-600", label: "Transparent Pricing", desc: "Full bid history" },
+            { icon: TrendingUp, color: "bg-rose-50 text-rose-600", label: "Transparent Pricing", desc: "Full bid history" },
           ].map(({ icon: Icon, color, label, desc }) => (
             <div key={label} className="bg-white rounded-2xl border border-slate-100 p-4 flex items-center gap-3 hover:shadow-md transition-shadow">
               <div className={`w-10 h-10 ${color} rounded-xl flex items-center justify-center flex-shrink-0`}>
@@ -455,7 +494,12 @@ const UserDashboard = () => {
           ) : (
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5">
               {live.slice(0, 8).map((item) => (
-                <AuctionCard key={item._id} item={item} navigate={navigate} />
+                <AuctionCard
+                  key={item._id}
+                  item={item}
+                  navigate={navigate}
+                  onMessageSeller={handleMessageSeller}
+                />
               ))}
             </div>
           )}

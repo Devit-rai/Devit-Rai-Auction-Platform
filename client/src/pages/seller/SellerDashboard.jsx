@@ -89,9 +89,10 @@ const SellerDashboard = () => {
       window.history.replaceState({}, "");
     }
   }, [location.state]);
+
   const [auctions, setAuctions] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [listFilter,  setListFilter] = useState("all");
+  const [listFilter, setListFilter] = useState("all");
 
   const userData = JSON.parse(sessionStorage.getItem("user"));
   const user = userData?.user || userData;
@@ -203,7 +204,6 @@ const SellerDashboard = () => {
           <NavItem icon={List} label="My Inventory" active={false} onClick={() => navigate("/inventory")} />
         </nav>
 
-        {/* Logout */}
         <div className="p-3 border-t border-slate-100">
           <button
             onClick={() => { socket.emit("leaveUserRoom", user?._id); sessionStorage.clear(); navigate("/"); }}
@@ -214,7 +214,6 @@ const SellerDashboard = () => {
         </div>
       </aside>
 
-      {/* Main */}
       <main className="flex-1 lg:ml-56 min-h-screen">
 
         <div className="sticky top-0 z-10 bg-[#F7F8FA]/80 backdrop-blur-sm border-b border-slate-200/60 px-7 py-3 flex items-center justify-end">
@@ -222,165 +221,165 @@ const SellerDashboard = () => {
         </div>
 
         <div className="p-7">
-        <div className="flex items-center justify-between mb-7">
-          <div>
-            <h1 className="text-xl font-black text-slate-800">Seller Dashboard</h1>
-            <p className="text-xs text-slate-400 mt-0.5">Real-time overview of your listings and bids</p>
-          </div>
-          <div className="flex items-center gap-3">
-            <span className="inline-flex items-center gap-1.5 text-[10px] font-bold text-emerald-700 bg-emerald-50 border border-emerald-200 px-2 py-1 rounded-full">
-              <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" /> Live
-            </span>
-          </div>
-        </div>
-
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-7">
-          <StatCard label="Total Revenue" value={fmt(stats.totalRevenue)} icon={TrendingUp} color="indigo" />
-          <StatCard label="Live Now" value={stats.liveCount} icon={Gavel} color="emerald" />
-          <StatCard label="Pending Approval" value={stats.pendingCount} icon={Clock} color="amber" sub="Awaiting admin review" />
-          <StatCard label="Rejected" value={stats.rejectedCount} icon={XCircle} color="red" sub="Need attention" />
-        </div>
-
-        {stats.pendingCount > 0 && (
-          <div className="mb-5 flex items-start gap-3 bg-amber-50 border border-amber-200 rounded-2xl px-5 py-3.5">
-            <Clock size={15} className="text-amber-500 flex-shrink-0 mt-0.5" />
+          <div className="flex items-center justify-between mb-7">
             <div>
-              <p className="text-xs font-bold text-amber-800">
-                {stats.pendingCount} listing{stats.pendingCount > 1 ? "s" : ""} awaiting admin approval
-              </p>
-              <p className="text-[11px] text-amber-600 mt-0.5">Your items will go live once an admin reviews and approves them.</p>
+              <h1 className="text-xl font-black text-slate-800">Seller Dashboard</h1>
+              <p className="text-xs text-slate-400 mt-0.5">Real-time overview of your listings and bids</p>
             </div>
-          </div>
-        )}
-
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-5 mb-7">
-          <div className="lg:col-span-2 bg-white rounded-2xl border border-slate-100 p-6">
-            <p className="text-sm font-black text-slate-700 mb-0.5">Listings This Week</p>
-            <p className="text-xs text-slate-400 mb-5">Items listed per day over the last 7 days</p>
-            <div className="h-[240px]">
-              <ResponsiveContainer width="100%" height="100%">
-                <AreaChart data={stats.chartData}>
-                  <defs>
-                    <linearGradient id="grad" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="5%"  stopColor="#6366f1" stopOpacity={0.12} />
-                      <stop offset="95%" stopColor="#6366f1" stopOpacity={0} />
-                    </linearGradient>
-                  </defs>
-                  <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
-                  <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fontSize: 11, fill: "#94a3b8", fontWeight: 500 }} />
-                  <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 11, fill: "#94a3b8" }} allowDecimals={false} />
-                  <Tooltip contentStyle={{ borderRadius: "12px", border: "1px solid #e2e8f0", fontSize: "12px" }} />
-                  <Area type="monotone" dataKey="count" stroke="#6366f1" strokeWidth={2.5} fillOpacity={1} fill="url(#grad)"
-                    dot={{ r: 3, fill: "#6366f1", strokeWidth: 0 }} activeDot={{ r: 5, fill: "#6366f1" }} />
-                </AreaChart>
-              </ResponsiveContainer>
+            <div className="flex items-center gap-3">
+              <span className="inline-flex items-center gap-1.5 text-[10px] font-bold text-emerald-700 bg-emerald-50 border border-emerald-200 px-2 py-1 rounded-full">
+                <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" /> Live
+              </span>
             </div>
           </div>
 
-          {/* Latest bids */}
-          <div className="bg-white rounded-2xl border border-slate-100 p-6 flex flex-col">
-            <p className="text-sm font-black text-slate-700 mb-4">Latest Bids</p>
-            <div className="flex-1 space-y-3 overflow-y-auto">
-              {stats.recentBids.length === 0 ? (
-                <p className="text-xs text-slate-400 text-center py-8">No bids yet.</p>
-              ) : stats.recentBids.map((bid, i) => (
-                <div key={i} className="flex items-center gap-3">
-                  <div className="w-8 h-8 bg-indigo-50 rounded-full flex items-center justify-center flex-shrink-0">
-                    <User size={13} className="text-indigo-400" />
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-7">
+            <StatCard label="Total Revenue" value={fmt(stats.totalRevenue)} icon={TrendingUp} color="indigo" />
+            <StatCard label="Live Now" value={stats.liveCount} icon={Gavel} color="emerald" />
+            <StatCard label="Pending Approval" value={stats.pendingCount} icon={Clock} color="amber" sub="Awaiting admin review" />
+            <StatCard label="Rejected" value={stats.rejectedCount} icon={XCircle} color="red" sub="Need attention" />
+          </div>
+
+          {stats.pendingCount > 0 && (
+            <div className="mb-5 flex items-start gap-3 bg-amber-50 border border-amber-200 rounded-2xl px-5 py-3.5">
+              <Clock size={15} className="text-amber-500 flex-shrink-0 mt-0.5" />
+              <div>
+                <p className="text-xs font-bold text-amber-800">
+                  {stats.pendingCount} listing{stats.pendingCount > 1 ? "s" : ""} awaiting admin approval
+                </p>
+                <p className="text-[11px] text-amber-600 mt-0.5">Your items will go live once an admin reviews and approves them.</p>
+              </div>
+            </div>
+          )}
+
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-5 mb-7">
+            <div className="lg:col-span-2 bg-white rounded-2xl border border-slate-100 p-6">
+              <p className="text-sm font-black text-slate-700 mb-0.5">Listings This Week</p>
+              <p className="text-xs text-slate-400 mb-5">Items listed per day over the last 7 days</p>
+              <div className="h-[240px]">
+                <ResponsiveContainer width="100%" height="100%">
+                  <AreaChart data={stats.chartData}>
+                    <defs>
+                      <linearGradient id="grad" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="5%"  stopColor="#6366f1" stopOpacity={0.12} />
+                        <stop offset="95%" stopColor="#6366f1" stopOpacity={0} />
+                      </linearGradient>
+                    </defs>
+                    <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
+                    <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fontSize: 11, fill: "#94a3b8", fontWeight: 500 }} />
+                    <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 11, fill: "#94a3b8" }} allowDecimals={false} />
+                    <Tooltip contentStyle={{ borderRadius: "12px", border: "1px solid #e2e8f0", fontSize: "12px" }} />
+                    <Area type="monotone" dataKey="count" stroke="#6366f1" strokeWidth={2.5} fillOpacity={1} fill="url(#grad)"
+                      dot={{ r: 3, fill: "#6366f1", strokeWidth: 0 }} activeDot={{ r: 5, fill: "#6366f1" }} />
+                  </AreaChart>
+                </ResponsiveContainer>
+              </div>
+            </div>
+
+            {/* Latest bids */}
+            <div className="bg-white rounded-2xl border border-slate-100 p-6 flex flex-col">
+              <p className="text-sm font-black text-slate-700 mb-4">Latest Bids</p>
+              <div className="flex-1 space-y-3 overflow-y-auto">
+                {stats.recentBids.length === 0 ? (
+                  <p className="text-xs text-slate-400 text-center py-8">No bids yet.</p>
+                ) : stats.recentBids.map((bid, i) => (
+                  <div key={i} className="flex items-center gap-3">
+                    <div className="w-8 h-8 bg-indigo-50 rounded-full flex items-center justify-center flex-shrink-0">
+                      <User size={13} className="text-indigo-400" />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-xs font-semibold text-slate-700 truncate">{bid.bidderName}</p>
+                      <p className="text-[11px] text-slate-400 truncate">{bid.itemTitle}</p>
+                    </div>
+                    <p className="text-xs font-black text-indigo-600 flex-shrink-0">{fmt(bid.bidAmount)}</p>
                   </div>
-                  <div className="flex-1 min-w-0">
-                    <p className="text-xs font-semibold text-slate-700 truncate">{bid.bidderName}</p>
-                    <p className="text-[11px] text-slate-400 truncate">{bid.itemTitle}</p>
-                  </div>
-                  <p className="text-xs font-black text-indigo-600 flex-shrink-0">{fmt(bid.bidAmount)}</p>
-                </div>
-              ))}
+                ))}
+              </div>
+              <button onClick={() => navigate("/bid-history")} className="mt-5 w-full py-2.5 bg-slate-900 text-white text-xs font-bold rounded-xl hover:bg-indigo-600 transition">
+                View Full History
+              </button>
             </div>
-            <button onClick={() => navigate("/bid-history")} className="mt-5 w-full py-2.5 bg-slate-900 text-white text-xs font-bold rounded-xl hover:bg-indigo-600 transition">
-              View Full History
-            </button>
           </div>
-        </div>
 
-        {/* Listings table */}
-        <div className="bg-white rounded-2xl border border-slate-100 overflow-hidden">
-          <div className="px-6 py-4 border-b border-slate-100 flex flex-wrap items-center justify-between gap-3">
-            <div>
-              <p className="text-sm font-black text-slate-700">My Listings</p>
-              <p className="text-xs text-slate-400 mt-0.5">{tableAuctions.length} of {auctions.length} items shown</p>
+          {/* Listings table */}
+          <div className="bg-white rounded-2xl border border-slate-100 overflow-hidden">
+            <div className="px-6 py-4 border-b border-slate-100 flex flex-wrap items-center justify-between gap-3">
+              <div>
+                <p className="text-sm font-black text-slate-700">My Listings</p>
+                <p className="text-xs text-slate-400 mt-0.5">{tableAuctions.length} of {auctions.length} items shown</p>
+              </div>
+              <div className="flex items-center gap-1.5 flex-wrap">
+                {[
+                  { label: "All", value: "all", count: auctions.length },
+                  { label: "Live", value: "Live", count: auctions.filter((a) => a.status === "Live").length },
+                  { label: "Upcoming", value: "Upcoming", count: auctions.filter((a) => a.status === "Upcoming").length },
+                  { label: "Ended", value: "Ended", count: auctions.filter((a) => a.status === "Ended").length },
+                  { label: "Pending", value: "Pending", count: stats.pendingCount, highlight: "amber" },
+                  { label: "Rejected", value: "Rejected", count: stats.rejectedCount, highlight: "red" },
+                ].map(({ label, value, count, highlight }) => (
+                  <button key={value} onClick={() => setListFilter(value)}
+                    className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-[11px] font-bold transition border ${
+                      listFilter === value
+                        ? (highlight === "amber" ? "bg-amber-500 text-white border-amber-500" : highlight === "red" ? "bg-red-500 text-white border-red-500" : "bg-indigo-600 text-white border-indigo-600")
+                        : "bg-white text-slate-500 border-slate-200 hover:border-slate-300 hover:text-slate-700"
+                    }`}>
+                    {label}
+                    <span className={`text-[10px] font-black min-w-[16px] h-4 px-1 rounded-full flex items-center justify-center ${listFilter === value ? "bg-white/20 text-white" : "bg-slate-100 text-slate-500"}`}>
+                      {count}
+                    </span>
+                  </button>
+                ))}
+              </div>
             </div>
-            <div className="flex items-center gap-1.5 flex-wrap">
-              {[
-                { label: "All", value: "all", count: auctions.length },
-                { label: "Live", value: "Live", count: auctions.filter((a) => a.status === "Live").length },
-                { label: "Upcoming", value: "Upcoming", count: auctions.filter((a) => a.status === "Upcoming").length },
-                { label: "Ended", value: "Ended", count: auctions.filter((a) => a.status === "Ended").length },
-                { label: "Pending", value: "Pending", count: stats.pendingCount, highlight: "amber" },
-                { label: "Rejected", value: "Rejected", count: stats.rejectedCount, highlight: "red" },
-              ].map(({ label, value, count, highlight }) => (
-                <button key={value} onClick={() => setListFilter(value)}
-                  className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-[11px] font-bold transition border ${
-                    listFilter === value
-                      ? (highlight === "amber" ? "bg-amber-500 text-white border-amber-500" : highlight === "red" ? "bg-red-500 text-white border-red-500" : "bg-indigo-600 text-white border-indigo-600")
-                      : "bg-white text-slate-500 border-slate-200 hover:border-slate-300 hover:text-slate-700"
-                  }`}>
-                  {label}
-                  <span className={`text-[10px] font-black min-w-[16px] h-4 px-1 rounded-full flex items-center justify-center ${listFilter === value ? "bg-white/20 text-white" : "bg-slate-100 text-slate-500"}`}>
-                    {count}
-                  </span>
-                </button>
-              ))}
+            <div className="overflow-x-auto">
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="border-b border-slate-100 bg-slate-50/50 text-left">
+                    {["Item","Current Bid","Bids","Time Left","Status","Approval"].map((h) => (
+                      <th key={h} className="px-5 py-3.5 text-[11px] font-black text-slate-400 uppercase tracking-wide">{h}</th>
+                    ))}
+                  </tr>
+                </thead>
+                <tbody>
+                  {loading ? (
+                    [...Array(4)].map((_, i) => (
+                      <tr key={i} className="border-b border-slate-50">
+                        {[...Array(6)].map((_, j) => (
+                          <td key={j} className="px-5 py-4"><div className="h-4 bg-slate-100 rounded animate-pulse" /></td>
+                        ))}
+                      </tr>
+                    ))
+                  ) : tableAuctions.length === 0 ? (
+                    <tr><td colSpan={6} className="text-center text-slate-400 py-12 text-xs">No items in this category.</td></tr>
+                  ) : tableAuctions.map((item) => {
+                    const approval = item.approvalStatus || "Pending";
+                    return (
+                      <tr key={item._id} className={`border-b border-slate-50 transition ${approval === "Rejected" ? "bg-red-50/30 hover:bg-red-50/50" : "hover:bg-slate-50/60"}`}>
+                        <td className="px-5 py-3.5">
+                          <div className="flex items-center gap-3">
+                            <div className="w-10 h-10 rounded-xl overflow-hidden bg-slate-100 flex-shrink-0">
+                              {item.image?.url && <img src={item.image.url} alt={item.title} className="w-full h-full object-cover" />}
+                            </div>
+                            <div>
+                              <p className="text-xs font-bold text-slate-800 line-clamp-1 max-w-[180px]">{item.title}</p>
+                              <p className="text-[10px] text-slate-400">{item.category}</p>
+                            </div>
+                          </div>
+                        </td>
+                        <td className="px-5 py-3.5 text-xs font-bold text-indigo-600 whitespace-nowrap">{fmt(item.currentBid || item.startingBid)}</td>
+                        <td className="px-5 py-3.5 text-center">
+                          <span className="bg-indigo-50 text-indigo-600 px-2.5 py-1 rounded-full text-[11px] font-semibold border border-indigo-100">{item.bids?.length || 0}</span>
+                        </td>
+                        <td className="px-5 py-3.5 text-xs text-slate-500 whitespace-nowrap">{item.status === "Ended" ? "—" : getTimeRemaining(item.endTime)}</td>
+                        <td className="px-5 py-3.5">{approval !== "Rejected" && <StatusBadge status={item.status} />}</td>
+                        <td className="px-5 py-3.5"><ApprovalBadge status={approval} /></td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
             </div>
           </div>
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm">
-              <thead>
-                <tr className="border-b border-slate-100 bg-slate-50/50 text-left">
-                  {["Item","Current Bid","Bids","Time Left","Status","Approval"].map((h) => (
-                    <th key={h} className="px-5 py-3.5 text-[11px] font-black text-slate-400 uppercase tracking-wide">{h}</th>
-                  ))}
-                </tr>
-              </thead>
-              <tbody>
-                {loading ? (
-                  [...Array(4)].map((_, i) => (
-                    <tr key={i} className="border-b border-slate-50">
-                      {[...Array(6)].map((_, j) => (
-                        <td key={j} className="px-5 py-4"><div className="h-4 bg-slate-100 rounded animate-pulse" /></td>
-                      ))}
-                    </tr>
-                  ))
-                ) : tableAuctions.length === 0 ? (
-                  <tr><td colSpan={6} className="text-center text-slate-400 py-12 text-xs">No items in this category.</td></tr>
-                ) : tableAuctions.map((item) => {
-                  const approval = item.approvalStatus || "Pending";
-                  return (
-                    <tr key={item._id} className={`border-b border-slate-50 transition ${approval === "Rejected" ? "bg-red-50/30 hover:bg-red-50/50" : "hover:bg-slate-50/60"}`}>
-                      <td className="px-5 py-3.5">
-                        <div className="flex items-center gap-3">
-                          <div className="w-10 h-10 rounded-xl overflow-hidden bg-slate-100 flex-shrink-0">
-                            {item.image?.url && <img src={item.image.url} alt={item.title} className="w-full h-full object-cover" />}
-                          </div>
-                          <div>
-                            <p className="text-xs font-bold text-slate-800 line-clamp-1 max-w-[180px]">{item.title}</p>
-                            <p className="text-[10px] text-slate-400">{item.category}</p>
-                          </div>
-                        </div>
-                      </td>
-                      <td className="px-5 py-3.5 text-xs font-bold text-indigo-600 whitespace-nowrap">{fmt(item.currentBid || item.startingBid)}</td>
-                      <td className="px-5 py-3.5 text-center">
-                        <span className="bg-indigo-50 text-indigo-600 px-2.5 py-1 rounded-full text-[11px] font-semibold border border-indigo-100">{item.bids?.length || 0}</span>
-                      </td>
-                      <td className="px-5 py-3.5 text-xs text-slate-500 whitespace-nowrap">{item.status === "Ended" ? "—" : getTimeRemaining(item.endTime)}</td>
-                      <td className="px-5 py-3.5">{approval !== "Rejected" && <StatusBadge status={item.status} />}</td>
-                      <td className="px-5 py-3.5"><ApprovalBadge status={approval} /></td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
-          </div>
-        </div>
         </div>
       </main>
     </div>
