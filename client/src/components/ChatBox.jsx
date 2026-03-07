@@ -110,12 +110,11 @@ const ChatBox = ({ currentUser }) => {
   const amAdmin  = isAdmin(currentUser);
   const amSeller = isSeller(currentUser);
 
-  // Header subtitle based on role
   const headerTitle = amAdmin ? "Sellers" : amSeller ? "Messages" : "Sellers";
 
   const isOnline = (u) => onlineUsers.includes(u._id?.toString());
 
-  /* ── socket ── */
+  /* socket */
   useEffect(() => {
     socket.on("getOnlineUsers", setOnlineUsers);
     socket.on("newMessage", (msg) => {
@@ -217,7 +216,7 @@ const ChatBox = ({ currentUser }) => {
   const withConvo = filtered.filter((u) => u.hasConversation);
   const withoutConvo = filtered.filter((u) => !u.hasConversation);
 
-  const newAdmins  = withoutConvo.filter((u) => isAdmin(u));
+  const newAdmins = withoutConvo.filter((u) => isAdmin(u));
   const newBidders = withoutConvo.filter((u) => !isAdmin(u));
 
   const storyUsers = [...chatUsers].sort((a, b) => {

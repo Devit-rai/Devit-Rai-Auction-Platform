@@ -15,9 +15,9 @@ import NotificationBell from "../../components/NotificationBell";
 const StatCard = ({ label, value, color, icon, loading }) => {
   const colorMap = {
     emerald: "bg-emerald-50 text-emerald-700",
-    amber:   "bg-amber-50 text-amber-700",
-    indigo:  "bg-indigo-50 text-indigo-700",
-    purple:  "bg-purple-50 text-purple-700",
+    amber: "bg-amber-50 text-amber-700",
+    indigo: "bg-indigo-50 text-indigo-700",
+    purple: "bg-purple-50 text-purple-700",
   };
   return (
     <div className="bg-white rounded-2xl border border-slate-100 p-5 flex items-center gap-4 hover:shadow-md transition-shadow">
@@ -82,7 +82,7 @@ const AdminDashboard = () => {
     sessionStorage.getItem("user") || localStorage.getItem("user") || "{}"
   );
   const adminUser = sessionData?.user || sessionData || {};
-  const adminId   = adminUser?._id || null;
+  const adminId = adminUser?._id || null;
   console.log("[Admin] adminId:", adminId);
 
   useEffect(() => {
